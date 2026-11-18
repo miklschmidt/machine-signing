@@ -10,11 +10,14 @@ permissions:
 
 jobs:
   linux:
-    name: Linux tests (software TPM)
-    runs-on: ubuntu-24.04
+    name: Linux tests on ${{ matrix.os }} (software TPM)
+    strategy:
+      matrix:
+        os: [ubuntu-24.04, ubuntu-24.04-arm]
+    runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v5
-      - run: sudo apt-get update && sudo apt-get install -y libtss2-dev swtpm
+      - run: sudo apt-get update && sudo apt-get install -y pkg-config libtss2-dev swtpm
       - uses: dtolnay/rust-toolchain@stable
         with:
           components: clippy, rustfmt
