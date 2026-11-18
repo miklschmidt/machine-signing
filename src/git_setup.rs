@@ -372,13 +372,21 @@ fn git(args: &[&str]) -> Result<()> {
     Ok(())
 }
 
-/// The short host name. `uname -n` exists on every Linux and macOS, unlike `hostname -s`.
+/// The short host name. On macOS, `uname -n` often returns a name from the network, such as
+/// `Mac.home`, so the local host name from the Sharing settings comes first.
 fn hostname() -> String {
-    Command::new("uname")
-        .arg("-n")
-        .output()
-        .ok()
-        .and_then(|out| String::from_utf8(out.stdout).ok())
+    let output = |program: &str, args: &[&str]| {
+        Command::new(program)
+            .args(args)
+            .output()
+            .ok()
+            .filter(|out| out.status.success())
+            .and_then(|out| String::from_utf8(out.stdout).ok())
+    };
+    cfg!(target_os = "macos")
+        .then(|| output("scutil", &["--get", "LocalHostName"]))
+        .flatten()
+        .or_else(|| output("uname", &["-n"]))
         .and_then(|name| name.trim().split('.').next().map(str::to_owned))
         .filter(|name| !name.is_empty())
         .unwrap_or_else(|| "this-machine".into())

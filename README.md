@@ -78,6 +78,8 @@ If `init` cannot write the allowed signers file, it prints the line for you to a
 You can run `init` again at any time. It does not replace the key.
 
 On GitHub, `init` names the machine key `<host> TPM` on Linux, or `<host> Secure Enclave` on macOS.
+On macOS, `<host>` is the local host name from the Sharing settings (`scutil --get LocalHostName`).
+On Linux, it is the first part of `uname -n`.
 
 ## Ask for Touch ID on macOS
 
