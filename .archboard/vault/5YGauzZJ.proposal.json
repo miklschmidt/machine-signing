@@ -11,6 +11,81 @@
   "changes": [
     {
       "type": "add",
+      "subject": "QQT2Dxdu#zAFbgXoh",
+      "kind": "module",
+      "value": {
+        "order": 5,
+        "name": "Key file",
+        "kind": "module",
+        "responsibility": "Store the hardware-wrapped key blob and call the platform backend.",
+        "description": "Key::load_or_create creates the key only when no key file exists. The key file is the only state; key.pub beside it is derived by init.",
+        "binding": {
+          "repo": "machine-signing",
+          "path": "src/key/mod.rs"
+        },
+        "schemaVersion": 1,
+        "id": "QQT2Dxdu#zAFbgXoh"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "QQT2Dxdu#zAFbgXoh",
+      "placement": {
+        "holder": "QQT2Dxdu#BeyvwQg3"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "QQT2Dxdu#IBXkO2Z7",
+      "kind": "relationship",
+      "value": {
+        "order": 10,
+        "kind": "call",
+        "label": "generate, public_key, sign",
+        "emphasis": "normal",
+        "anchor": {
+          "repo": "machine-signing",
+          "path": "src/key/mod.rs",
+          "symbol": "Key::sign"
+        },
+        "id": "QQT2Dxdu#IBXkO2Z7",
+        "to": "QQT2Dxdu#PrQ2h8ZS"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "QQT2Dxdu#IBXkO2Z7",
+      "placement": {
+        "holder": "QQT2Dxdu#zAFbgXoh"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "QQT2Dxdu#4l4RGHmn",
+      "kind": "relationship",
+      "value": {
+        "order": 20,
+        "kind": "call",
+        "label": "generate, public_key, sign",
+        "emphasis": "normal",
+        "anchor": {
+          "repo": "machine-signing",
+          "path": "src/key/mod.rs",
+          "symbol": "Key::sign"
+        },
+        "id": "QQT2Dxdu#4l4RGHmn",
+        "to": "QQT2Dxdu#3yWx2Vi4"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "QQT2Dxdu#4l4RGHmn",
+      "placement": {
+        "holder": "QQT2Dxdu#zAFbgXoh"
+      }
+    },
+    {
+      "type": "add",
       "subject": "QQT2Dxdu#PrQ2h8ZS",
       "kind": "module",
       "value": {
@@ -43,6 +118,11 @@
         "kind": "call",
         "label": "CreatePrimary, Load, Sign",
         "emphasis": "normal",
+        "anchor": {
+          "repo": "machine-signing",
+          "path": "src/key/tpm.rs",
+          "symbol": "sign"
+        },
         "id": "QQT2Dxdu#467kLw1A",
         "to": "QQT2Dxdu#d6Z0gUyZ"
       }
@@ -88,6 +168,11 @@
         "kind": "call",
         "label": "sign buffer",
         "emphasis": "normal",
+        "anchor": {
+          "repo": "machine-signing",
+          "path": "src/main.rs",
+          "symbol": "main"
+        },
         "id": "QQT2Dxdu#oGt5IFyQ",
         "to": "QQT2Dxdu#xHWs9u1C"
       }
@@ -108,6 +193,11 @@
         "kind": "call",
         "label": "configure git",
         "emphasis": "normal",
+        "anchor": {
+          "repo": "machine-signing",
+          "path": "src/main.rs",
+          "symbol": "main"
+        },
         "id": "QQT2Dxdu#arrD3rbv",
         "to": "QQT2Dxdu#RVUq5RTc"
       }
@@ -128,6 +218,11 @@
         "kind": "call",
         "label": "exec other -Y modes",
         "emphasis": "normal",
+        "anchor": {
+          "repo": "machine-signing",
+          "path": "src/main.rs",
+          "symbol": "main"
+        },
         "id": "QQT2Dxdu#hLx0urQD",
         "to": "QQT2Dxdu#kl43IMU6"
       }
@@ -148,7 +243,7 @@
         "name": "Secure Enclave backend",
         "kind": "module",
         "responsibility": "Create and use a Secure Enclave P-256 signing key through CryptoKit.",
-        "description": "A Swift shim with @_cdecl functions, built by build.rs with swiftc. It stores the CryptoKit dataRepresentation blob, because keychain storage of Secure Enclave keys needs entitlements that an unsigned CLI does not have. No user presence in v1.",
+        "description": "secure_enclave.swift exports three @_cdecl functions (generate, public key, sign) that build.rs compiles with swiftc into a static library. The Rust side calls them through FFI. It stores the CryptoKit dataRepresentation blob, because keychain storage of Secure Enclave keys needs entitlements that an unsigned CLI does not have. No user presence in v1.",
         "binding": {
           "repo": "machine-signing",
           "path": "src/key/secure_enclave.rs"
@@ -173,6 +268,11 @@
         "kind": "call",
         "label": "CryptoKit",
         "emphasis": "normal",
+        "anchor": {
+          "repo": "machine-signing",
+          "path": "src/key/secure_enclave.swift",
+          "symbol": "ms_se_sign"
+        },
         "id": "QQT2Dxdu#avZ4oZ1W",
         "to": "QQT2Dxdu#ofa1Ra5m"
       }
@@ -216,35 +316,20 @@
       "value": {
         "order": 10,
         "kind": "call",
-        "label": "public key, sign digest",
+        "label": "public key, sign",
         "emphasis": "normal",
+        "anchor": {
+          "repo": "machine-signing",
+          "path": "src/sshsig.rs",
+          "symbol": "sign"
+        },
         "id": "QQT2Dxdu#UUJnt3m1",
-        "to": "QQT2Dxdu#PrQ2h8ZS"
+        "to": "QQT2Dxdu#zAFbgXoh"
       }
     },
     {
       "type": "place",
       "subject": "QQT2Dxdu#UUJnt3m1",
-      "placement": {
-        "holder": "QQT2Dxdu#xHWs9u1C"
-      }
-    },
-    {
-      "type": "add",
-      "subject": "QQT2Dxdu#PrWfck5P",
-      "kind": "relationship",
-      "value": {
-        "order": 11,
-        "kind": "call",
-        "label": "public key, sign digest",
-        "emphasis": "normal",
-        "id": "QQT2Dxdu#PrWfck5P",
-        "to": "QQT2Dxdu#3yWx2Vi4"
-      }
-    },
-    {
-      "type": "place",
-      "subject": "QQT2Dxdu#PrWfck5P",
       "placement": {
         "holder": "QQT2Dxdu#xHWs9u1C"
       }
@@ -258,7 +343,7 @@
         "name": "Git setup",
         "kind": "module",
         "responsibility": "Configure global git for SSH signing with the hardware key.",
-        "description": "Sets gpg.format=ssh, gpg.ssh.program, user.signingkey=key::<public key> and commit.gpgsign=true, and appends the key to the allowed signers file. It prints each changed value and the gh command that uploads the signing key. It does not set tag.gpgsign.",
+        "description": "Writes key.pub beside the key file and prints it with the gh command that uploads it as a signing key. Appends the key for user.email to the allowed signers file. Then sets gpg.format=ssh, gpg.ssh.program, gpg.ssh.allowedSignersFile when unset, user.signingkey=<path to key.pub> and commit.gpgsign=true, and prints each changed value. A path, not a key:: literal, keeps git from passing -U. When git cannot write the global configuration, it prints the settings as a configuration block. It does not set tag.gpgsign.",
         "binding": {
           "repo": "machine-signing",
           "path": "src/git_setup.rs"
@@ -283,33 +368,18 @@
         "kind": "call",
         "label": "create or load key",
         "emphasis": "normal",
+        "anchor": {
+          "repo": "machine-signing",
+          "path": "src/git_setup.rs",
+          "symbol": "init"
+        },
         "id": "QQT2Dxdu#Ikan0nl2",
-        "to": "QQT2Dxdu#PrQ2h8ZS"
+        "to": "QQT2Dxdu#zAFbgXoh"
       }
     },
     {
       "type": "place",
       "subject": "QQT2Dxdu#Ikan0nl2",
-      "placement": {
-        "holder": "QQT2Dxdu#RVUq5RTc"
-      }
-    },
-    {
-      "type": "add",
-      "subject": "QQT2Dxdu#c6bj1i40",
-      "kind": "relationship",
-      "value": {
-        "order": 11,
-        "kind": "call",
-        "label": "create or load key",
-        "emphasis": "normal",
-        "id": "QQT2Dxdu#c6bj1i40",
-        "to": "QQT2Dxdu#3yWx2Vi4"
-      }
-    },
-    {
-      "type": "place",
-      "subject": "QQT2Dxdu#c6bj1i40",
       "placement": {
         "holder": "QQT2Dxdu#RVUq5RTc"
       }
@@ -323,6 +393,11 @@
         "kind": "call",
         "label": "git config --global",
         "emphasis": "normal",
+        "anchor": {
+          "repo": "machine-signing",
+          "path": "src/git_setup.rs",
+          "symbol": "set"
+        },
         "id": "QQT2Dxdu#wc2UT8c9",
         "to": "QQT2Dxdu#pbzqEcu0"
       }
@@ -481,6 +556,7 @@
           "QQT2Dxdu#pbzqEcu0",
           "QQT2Dxdu#vEPUHAth",
           "QQT2Dxdu#xHWs9u1C",
+          "QQT2Dxdu#zAFbgXoh",
           "QQT2Dxdu#PrQ2h8ZS",
           "QQT2Dxdu#d6Z0gUyZ"
         ]
@@ -502,7 +578,7 @@
         "id": "QQT2Dxdu#KoPqJ3bT",
         "from": "QQT2Dxdu#pbzqEcu0",
         "to": "QQT2Dxdu#vEPUHAth",
-        "label": "-Y sign -n git -f <key> -U <buffer>",
+        "label": "-Y sign -n git -f <key.pub> <buffer>",
         "kind": "sync"
       }
     },
@@ -523,7 +599,12 @@
         "from": "QQT2Dxdu#vEPUHAth",
         "to": "QQT2Dxdu#xHWs9u1C",
         "label": "sign buffer for -f key",
-        "kind": "sync"
+        "kind": "sync",
+        "anchor": {
+          "repo": "machine-signing",
+          "path": "src/main.rs",
+          "symbol": "main"
+        }
       }
     },
     {
@@ -541,14 +622,44 @@
       "value": {
         "id": "QQT2Dxdu#4XuR93uN",
         "from": "QQT2Dxdu#xHWs9u1C",
-        "to": "QQT2Dxdu#PrQ2h8ZS",
-        "label": "load key blob, sign SHA-256 digest",
-        "kind": "sync"
+        "to": "QQT2Dxdu#zAFbgXoh",
+        "label": "sign signed data",
+        "kind": "sync",
+        "anchor": {
+          "repo": "machine-signing",
+          "path": "src/sshsig.rs",
+          "symbol": "sign"
+        }
       }
     },
     {
       "type": "place",
       "subject": "QQT2Dxdu#4XuR93uN",
+      "placement": {
+        "holder": "QQT2Dxdu#Y78771AN",
+        "before": "QQT2Dxdu#aY7FVHoe"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "QQT2Dxdu#aY7FVHoe",
+      "kind": "step",
+      "value": {
+        "id": "QQT2Dxdu#aY7FVHoe",
+        "from": "QQT2Dxdu#zAFbgXoh",
+        "to": "QQT2Dxdu#PrQ2h8ZS",
+        "label": "sign SHA-256 digest",
+        "kind": "sync",
+        "anchor": {
+          "repo": "machine-signing",
+          "path": "src/key/mod.rs",
+          "symbol": "Key::sign"
+        }
+      }
+    },
+    {
+      "type": "place",
+      "subject": "QQT2Dxdu#aY7FVHoe",
       "placement": {
         "holder": "QQT2Dxdu#Y78771AN",
         "before": "QQT2Dxdu#NXE6a52E"
@@ -563,7 +674,12 @@
         "from": "QQT2Dxdu#PrQ2h8ZS",
         "to": "QQT2Dxdu#d6Z0gUyZ",
         "label": "CreatePrimary, Load, Sign",
-        "kind": "sync"
+        "kind": "sync",
+        "anchor": {
+          "repo": "machine-signing",
+          "path": "src/key/tpm.rs",
+          "symbol": "sign"
+        }
       }
     },
     {
@@ -705,7 +821,12 @@
         "from": "QQT2Dxdu#vEPUHAth",
         "to": "QQT2Dxdu#kl43IMU6",
         "label": "exec with the same arguments",
-        "kind": "sync"
+        "kind": "sync",
+        "anchor": {
+          "repo": "machine-signing",
+          "path": "src/main.rs",
+          "symbol": "main"
+        }
       }
     },
     {
@@ -746,6 +867,7 @@
         "participants": [
           "QQT2Dxdu#vEPUHAth",
           "QQT2Dxdu#RVUq5RTc",
+          "QQT2Dxdu#zAFbgXoh",
           "QQT2Dxdu#PrQ2h8ZS",
           "QQT2Dxdu#d6Z0gUyZ",
           "QQT2Dxdu#pbzqEcu0"
@@ -768,12 +890,42 @@
         "from": "QQT2Dxdu#vEPUHAth",
         "to": "QQT2Dxdu#RVUq5RTc",
         "label": "init",
-        "kind": "sync"
+        "kind": "sync",
+        "anchor": {
+          "repo": "machine-signing",
+          "path": "src/main.rs",
+          "symbol": "main"
+        }
       }
     },
     {
       "type": "place",
       "subject": "QQT2Dxdu#4VHTHztx",
+      "placement": {
+        "holder": "QQT2Dxdu#XbTgQ58S",
+        "before": "QQT2Dxdu#ZiFMCH1b"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "QQT2Dxdu#ZiFMCH1b",
+      "kind": "step",
+      "value": {
+        "id": "QQT2Dxdu#ZiFMCH1b",
+        "from": "QQT2Dxdu#RVUq5RTc",
+        "to": "QQT2Dxdu#zAFbgXoh",
+        "label": "load_or_create",
+        "kind": "sync",
+        "anchor": {
+          "repo": "machine-signing",
+          "path": "src/git_setup.rs",
+          "symbol": "init"
+        }
+      }
+    },
+    {
+      "type": "place",
+      "subject": "QQT2Dxdu#ZiFMCH1b",
       "placement": {
         "holder": "QQT2Dxdu#XbTgQ58S",
         "before": "QQT2Dxdu#Sw5Ev33A"
@@ -807,10 +959,15 @@
       "kind": "step",
       "value": {
         "id": "QQT2Dxdu#jddfRiDo",
-        "from": "QQT2Dxdu#RVUq5RTc",
+        "from": "QQT2Dxdu#zAFbgXoh",
         "to": "QQT2Dxdu#PrQ2h8ZS",
         "label": "generate",
-        "kind": "sync"
+        "kind": "sync",
+        "anchor": {
+          "repo": "machine-signing",
+          "path": "src/key/mod.rs",
+          "symbol": "Key::load_or_create"
+        }
       }
     },
     {
@@ -831,7 +988,12 @@
         "from": "QQT2Dxdu#PrQ2h8ZS",
         "to": "QQT2Dxdu#d6Z0gUyZ",
         "label": "CreatePrimary, Create",
-        "kind": "sync"
+        "kind": "sync",
+        "anchor": {
+          "repo": "machine-signing",
+          "path": "src/key/tpm.rs",
+          "symbol": "generate"
+        }
       }
     },
     {
@@ -850,8 +1012,8 @@
       "value": {
         "id": "QQT2Dxdu#zAK3FM9q",
         "from": "QQT2Dxdu#PrQ2h8ZS",
-        "to": "QQT2Dxdu#RVUq5RTc",
-        "label": "public key, saved blob",
+        "to": "QQT2Dxdu#zAFbgXoh",
+        "label": "blob",
         "kind": "return"
       }
     },
@@ -869,10 +1031,15 @@
       "kind": "step",
       "value": {
         "id": "QQT2Dxdu#D0pZgaak",
-        "from": "QQT2Dxdu#RVUq5RTc",
+        "from": "QQT2Dxdu#zAFbgXoh",
         "to": "QQT2Dxdu#PrQ2h8ZS",
-        "label": "read public key",
-        "kind": "sync"
+        "label": "public_key(blob)",
+        "kind": "sync",
+        "anchor": {
+          "repo": "machine-signing",
+          "path": "src/key/mod.rs",
+          "symbol": "Key::load"
+        }
       }
     },
     {
@@ -891,8 +1058,14 @@
         "id": "QQT2Dxdu#FsdLrfUO",
         "from": "QQT2Dxdu#RVUq5RTc",
         "to": "QQT2Dxdu#pbzqEcu0",
-        "label": "git config --global …",
-        "kind": "sync"
+        "label": "git config --global",
+        "kind": "sync",
+        "note": "If git cannot write the global configuration, for example a home-manager file, init prints the configuration block and exits with status 1.",
+        "anchor": {
+          "repo": "machine-signing",
+          "path": "src/git_setup.rs",
+          "symbol": "set"
+        }
       }
     },
     {
@@ -902,5 +1075,9 @@
         "holder": "QQT2Dxdu#XbTgQ58S"
       }
     }
+  ],
+  "retiredIds": [
+    "QQT2Dxdu#PrWfck5P",
+    "QQT2Dxdu#c6bj1i40"
   ]
 }
