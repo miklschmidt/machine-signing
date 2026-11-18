@@ -56,7 +56,13 @@ impl Key {
                 path.display()
             )
         })?;
-        Self::from_blob(blob)
+        Self::from_blob(blob).with_context(|| {
+            format!(
+                "cannot use the machine key {}. If it comes from another machine or is damaged, \
+                 delete it and run `machine-signing init` to create a new key",
+                path.display()
+            )
+        })
     }
 
     /// Loads the key, or returns `None` when no key file exists.

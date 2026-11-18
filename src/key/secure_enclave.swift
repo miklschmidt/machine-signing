@@ -55,7 +55,7 @@ public func ms_se_public_key(
         }
         return 0
     } catch {
-        return fail("the Secure Enclave refused the saved key. The key file comes from another Mac: \(error)", err, errCap, errLen)
+        return fail("the Secure Enclave refused the saved key: \(error)", err, errCap, errLen)
     }
 }
 

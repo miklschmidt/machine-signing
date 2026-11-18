@@ -61,8 +61,8 @@ pub fn public_key(blob: &[u8]) -> Result<Vec<u8>> {
     match PublicKey::try_from(public)? {
         PublicKey::Ecc { x, y } => {
             let mut sec1 = vec![0x04];
-            sec1.extend(left_pad::<32>(&x)?);
-            sec1.extend(left_pad::<32>(&y)?);
+            sec1.extend(field_bytes(&x)?);
+            sec1.extend(field_bytes(&y)?);
             Ok(sec1)
         }
         PublicKey::Rsa(_) => bail!("the key file holds an RSA key, not a P-256 key"),
@@ -78,7 +78,8 @@ pub fn sign(blob: &[u8], data: &[u8]) -> Result<Signature> {
         let key = ctx.load(primary.key_handle, private, public);
         ctx.flush_context(primary.key_handle.into())?;
         let key: KeyHandle = key.context(
-            "the TPM refused the saved key. The TPM was cleared or this key file comes from another machine",
+            "the TPM refused the saved key. If the TPM was cleared or the key file comes from another \
+             machine, delete the key file and run `machine-signing init` to create a new key",
         )?;
         let ticket = TPMT_TK_HASHCHECK { tag: TPM2_ST_HASHCHECK, hierarchy: TPM2_RH_NULL, digest: Default::default() };
         let signature = ctx.sign(key, digest, SignatureScheme::Null, ticket.try_into()?);
@@ -88,8 +89,8 @@ pub fn sign(blob: &[u8], data: &[u8]) -> Result<Signature> {
     let tss_esapi::structures::Signature::EcDsa(ecc) = signature else {
         bail!("the TPM returned a signature that is not ECDSA");
     };
-    let r = left_pad::<32>(ecc.signature_r().value())?;
-    let s = left_pad::<32>(ecc.signature_s().value())?;
+    let r = field_bytes(ecc.signature_r().value())?;
+    let s = field_bytes(ecc.signature_s().value())?;
     Ok(Signature::from_scalars(r, s)?)
 }
 
@@ -197,14 +198,15 @@ fn decode_blob(blob: &[u8]) -> Result<(Public, Private)> {
     ))
 }
 
-fn left_pad<const N: usize>(bytes: &[u8]) -> Result<p256::FieldBytes> {
-    if bytes.len() > N {
+/// Left-pads a big-endian TPM value to the 32 bytes of a P-256 field element.
+fn field_bytes(bytes: &[u8]) -> Result<p256::FieldBytes> {
+    let mut out = p256::FieldBytes::default();
+    let Some(start) = out.len().checked_sub(bytes.len()) else {
         bail!(
-            "the TPM returned a {}-byte value for a P-256 coordinate",
+            "the TPM returned a {}-byte value where P-256 has 32 bytes",
             bytes.len()
         );
-    }
-    let mut out = p256::FieldBytes::default();
-    out[N - bytes.len()..].copy_from_slice(bytes);
+    };
+    out[start..].copy_from_slice(bytes);
     Ok(out)
 }
