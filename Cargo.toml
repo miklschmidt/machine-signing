@@ -5,9 +5,12 @@ edition = "2024"
 
 [dependencies]
 anyhow = "1.0.104"
+dirs = "7.0.0"
 p256 = "0.13"
-sha2 = "0.10"
 ssh-key = { version = "0.6.7", features = ["ecdsa", "p256", "std"] }
 
 [target.'cfg(target_os = "linux")'.dependencies]
 tss-esapi = "7.7"
+
+[dev-dependencies]
+tempfile = "3.27.0"

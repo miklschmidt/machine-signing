@@ -1,0 +1,208 @@
+//! `machine-signing init`: create the key if needed and configure global git to sign with it.
+
+use crate::key::{HARDWARE, Key, Loaded};
+use anyhow::{Context, Result, bail};
+use std::path::{Path, PathBuf};
+use std::process::Command;
+
+const DEFAULT_ALLOWED_SIGNERS: &str = "~/.config/git/allowed_signers";
+
+pub fn init() -> Result<()> {
+    let key = match Key::load_or_create()? {
+        Loaded::Created(key) => {
+            eprintln!("Created a new {HARDWARE} key: {}", Key::path()?.display());
+            key
+        }
+        Loaded::Existing(key) => {
+            eprintln!(
+                "Using the existing {HARDWARE} key: {}",
+                Key::path()?.display()
+            );
+            key
+        }
+    };
+    let host = hostname();
+    let public = ssh_key::PublicKey::new(key.public.clone(), format!("machine-signing@{host}"));
+    let public_line = public.to_openssh()?;
+    let public_path = Key::public_path()?;
+    std::fs::write(&public_path, format!("{public_line}\n"))
+        .with_context(|| format!("cannot write {}", public_path.display()))?;
+
+    eprintln!("Public key:");
+    println!("{public_line}");
+    eprintln!(
+        "\nAdd it to GitHub as a signing key:\n  gh ssh-key add '{}' --type signing --title 'machine-signing@{host}'",
+        public_path.display()
+    );
+    eprintln!();
+
+    let allowed_signers = add_allowed_signer(&public)?;
+    let mut settings = vec![
+        ("gpg.format", "ssh".to_owned()),
+        ("gpg.ssh.program", program()?),
+        (
+            "user.signingkey",
+            public_path.to_string_lossy().into_owned(),
+        ),
+        ("commit.gpgsign", "true".to_owned()),
+    ];
+    if let Some(path) = allowed_signers {
+        settings.insert(2, ("gpg.ssh.allowedSignersFile", path));
+    }
+    for (name, value) in &settings {
+        if let Err(err) = set(name, value) {
+            eprintln!(
+                "\nAdd these settings to your git configuration:\n\n{}",
+                gitconfig(&settings)
+            );
+            return Err(err.context("cannot write the global git configuration"));
+        }
+    }
+
+    Ok(())
+}
+
+/// Sets a global git value and reports the change. An equal value is left alone.
+fn set(name: &str, value: &str) -> Result<()> {
+    let old = get(name, false)?;
+    if old.as_deref() == Some(value) {
+        eprintln!("git {name} is already {value}");
+        return Ok(());
+    }
+    git(&["config", "--global", name, value])?;
+    match old {
+        Some(old) => eprintln!("git {name}: {old} -> {value}"),
+        None => eprintln!("git {name}: {value}"),
+    }
+    Ok(())
+}
+
+/// Appends the key to the allowed signers file. Returns the allowedSignersFile value to set when git has none.
+fn add_allowed_signer(public: &ssh_key::PublicKey) -> Result<Option<String>> {
+    let Some(email) = get("user.email", false)? else {
+        eprintln!(
+            "git user.email is not set, so no allowed signers entry was written. Set it and run init again."
+        );
+        return Ok(None);
+    };
+    let (path, setting) = match get("gpg.ssh.allowedSignersFile", true)? {
+        Some(path) => (PathBuf::from(path), None),
+        None => {
+            let home =
+                dirs::home_dir().context("cannot find the home directory: HOME is not set")?;
+            (
+                home.join(".config/git/allowed_signers"),
+                Some(DEFAULT_ALLOWED_SIGNERS.to_owned()),
+            )
+        }
+    };
+    let mut key = public.clone();
+    key.set_comment("");
+    let entry = format!("{email} namespaces=\"git\" {}", key.to_openssh()?);
+    let existing = std::fs::read_to_string(&path).unwrap_or_default();
+    if existing.lines().any(|line| line.trim() == entry) {
+        eprintln!("{} already allows this key for {email}", path.display());
+        return Ok(setting);
+    }
+    if let Some(dir) = path.parent() {
+        std::fs::create_dir_all(dir).with_context(|| format!("cannot create {}", dir.display()))?;
+    }
+    let separator = if existing.is_empty() || existing.ends_with('\n') {
+        ""
+    } else {
+        "\n"
+    };
+    std::fs::write(&path, format!("{existing}{separator}{entry}\n"))
+        .with_context(|| format!("cannot write {}", path.display()))?;
+    eprintln!("{}: allowed this key for {email}", path.display());
+    Ok(setting)
+}
+
+/// Renders settings as git configuration file text, for configurations that git cannot write.
+fn gitconfig(settings: &[(&str, String)]) -> String {
+    let mut text = String::new();
+    for (name, value) in settings {
+        let (section, key) = name.rsplit_once('.').expect("setting names have a section");
+        let header = match section.split_once('.') {
+            Some((section, sub)) => format!("[{section} \"{sub}\"]"),
+            None => format!("[{section}]"),
+        };
+        text.push_str(&format!("{header}\n\t{key} = \"{value}\"\n"));
+    }
+    text
+}
+
+/// The value git runs as gpg.ssh.program: the bare name when PATH finds this executable, else its absolute path.
+fn program() -> Result<String> {
+    let exe = std::env::current_exe()?.canonicalize()?;
+    let name = exe.file_name().context("the executable has no file name")?;
+    let on_path = std::env::var_os("PATH").is_some_and(|paths| {
+        std::env::split_paths(&paths)
+            .find_map(|dir| {
+                dir.join(name)
+                    .canonicalize()
+                    .ok()
+                    .filter(|found| is_executable(found))
+            })
+            .is_some_and(|found| found == exe)
+    });
+    Ok(if on_path {
+        name.to_string_lossy().into_owned()
+    } else {
+        exe.to_string_lossy().into_owned()
+    })
+}
+
+fn is_executable(path: &Path) -> bool {
+    use std::os::unix::fs::PermissionsExt;
+    path.metadata()
+        .is_ok_and(|meta| meta.is_file() && meta.permissions().mode() & 0o111 != 0)
+}
+
+fn get(name: &str, as_path: bool) -> Result<Option<String>> {
+    let mut args = vec!["config", "--global", "--includes", "--get"];
+    if as_path {
+        args.push("--type=path");
+    }
+    args.push(name);
+    let output = Command::new("git")
+        .args(&args)
+        .output()
+        .context("cannot run git")?;
+    match output.status.code() {
+        Some(0) => Ok(Some(
+            String::from_utf8(output.stdout)?.trim_end().to_owned(),
+        )),
+        Some(1) => Ok(None),
+        _ => bail!(
+            "git config --get {name} failed: {}",
+            String::from_utf8_lossy(&output.stderr).trim()
+        ),
+    }
+}
+
+fn git(args: &[&str]) -> Result<()> {
+    let output = Command::new("git")
+        .args(args)
+        .output()
+        .context("cannot run git")?;
+    if !output.status.success() {
+        bail!(
+            "git {} failed: {}",
+            args.join(" "),
+            String::from_utf8_lossy(&output.stderr).trim()
+        );
+    }
+    Ok(())
+}
+
+fn hostname() -> String {
+    Command::new("hostname")
+        .arg("-s")
+        .output()
+        .ok()
+        .and_then(|out| String::from_utf8(out.stdout).ok())
+        .map(|name| name.trim().to_owned())
+        .filter(|name| !name.is_empty())
+        .unwrap_or_else(|| "this-machine".into())
+}

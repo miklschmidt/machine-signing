@@ -11,7 +11,7 @@
       devShells = forAll (pkgs: {
         default = pkgs.mkShell {
           packages = with pkgs; [ cargo rustc clippy rustfmt rust-analyzer openssh ]
-            ++ lib.optionals stdenv.isLinux [ pkg-config tpm2-tss swtpm ];
+            ++ lib.optionals stdenv.hostPlatform.isLinux [ pkg-config tpm2-tss swtpm ];
           RUST_SRC_PATH = "${pkgs.rustPlatform.rustLibSrc}";
         };
       });
