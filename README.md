@@ -141,7 +141,13 @@ nix develop
 cargo test
 ```
 
-The test starts a software TPM, runs `init`, makes a signed commit, and makes sure that `git verify-commit` accepts it.
-The test does not touch your git configuration or your TPM.
+The tests start a software TPM and an SSH agent, and put a fake `gh` first on the PATH.
+They run `init`, make signed commits, and make sure that `git verify-commit` accepts them.
+The tests do not touch your git configuration, your TPM or your GitHub account.
+
+To make a release, merge the release pull request that release-please opens on `main`.
+release-please sets the version and writes the changelog from the Conventional Commits messages.
+GitHub Actions then builds the binaries and adds them to the release.
+CI does not run on the release pull request, because the workflow token opens it. That pull request changes only the version and the changelog.
 
 The architecture is in the archboard vault in `.archboard/vault`.
