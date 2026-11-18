@@ -5,6 +5,7 @@
 import CryptoKit
 import Foundation
 import LocalAuthentication
+import Security
 
 private func fail(_ message: String, _ err: UnsafeMutablePointer<UInt8>, _ errCap: Int, _ errLen: UnsafeMutablePointer<Int>) -> Int32 {
     let bytes = Array(message.utf8.prefix(errCap))
