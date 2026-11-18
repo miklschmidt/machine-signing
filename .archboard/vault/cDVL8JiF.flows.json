@@ -1,0 +1,355 @@
+{
+  "schemaVersion": 1,
+  "id": "cDVL8JiF",
+  "name": "Signing",
+  "flows": [
+    {
+      "id": "QQT2Dxdu#Y78771AN",
+      "name": "Sign a commit",
+      "summary": "git asks the tool for an SSH signature of the commit buffer. The tool checks the requested key, has the hardware sign the SSHSIG digest, and writes the armored signature where git reads it.",
+      "participants": [
+        "QQT2Dxdu#pbzqEcu0",
+        "QQT2Dxdu#vEPUHAth",
+        "QQT2Dxdu#xHWs9u1C",
+        "QQT2Dxdu#VC8uP45L",
+        "QQT2Dxdu#kl43IMU6",
+        "QQT2Dxdu#XeKaZ1DF",
+        "QQT2Dxdu#zAFbgXoh",
+        "QQT2Dxdu#PrQ2h8ZS",
+        "QQT2Dxdu#d6Z0gUyZ"
+      ],
+      "steps": [
+        {
+          "id": "QQT2Dxdu#KoPqJ3bT",
+          "from": "QQT2Dxdu#pbzqEcu0",
+          "to": "QQT2Dxdu#vEPUHAth",
+          "label": "-Y sign -n git -f <key.pub> <buffer>",
+          "kind": "sync"
+        },
+        {
+          "id": "QQT2Dxdu#M1uFLAeI",
+          "from": "QQT2Dxdu#vEPUHAth",
+          "to": "QQT2Dxdu#xHWs9u1C",
+          "label": "sign buffer for -f key",
+          "kind": "sync",
+          "anchor": {
+            "repo": "github.com/miklschmidt/machine-signing",
+            "path": "src/main.rs",
+            "symbol": "main"
+          }
+        },
+        {
+          "id": "QQT2Dxdu#vPeBLQ4n",
+          "kind": "decision",
+          "question": "Preferred key set?",
+          "alternatives": [
+            {
+              "label": "yes",
+              "steps": [
+                {
+                  "id": "QQT2Dxdu#4rLkA0qc",
+                  "from": "QQT2Dxdu#xHWs9u1C",
+                  "to": "QQT2Dxdu#VC8uP45L",
+                  "label": "sign message",
+                  "kind": "sync",
+                  "anchor": {
+                    "repo": "github.com/miklschmidt/machine-signing",
+                    "path": "src/sshsig.rs",
+                    "symbol": "sign"
+                  }
+                },
+                {
+                  "id": "QQT2Dxdu#s5H3mSgC",
+                  "from": "QQT2Dxdu#VC8uP45L",
+                  "to": "QQT2Dxdu#kl43IMU6",
+                  "label": "-Y sign -U -f prefer.pub (stdin)",
+                  "kind": "sync",
+                  "anchor": {
+                    "repo": "github.com/miklschmidt/machine-signing",
+                    "path": "src/prefer.rs",
+                    "symbol": "sign"
+                  }
+                },
+                {
+                  "id": "QQT2Dxdu#764S6BhQ",
+                  "from": "QQT2Dxdu#kl43IMU6",
+                  "to": "QQT2Dxdu#XeKaZ1DF",
+                  "label": "sign with agent key",
+                  "kind": "sync"
+                },
+                {
+                  "id": "QQT2Dxdu#CvUmlWKC",
+                  "from": "QQT2Dxdu#VC8uP45L",
+                  "to": "QQT2Dxdu#xHWs9u1C",
+                  "label": "armored SSHSIG, or the failure",
+                  "kind": "return"
+                }
+              ]
+            },
+            {
+              "label": "no",
+              "steps": []
+            }
+          ]
+        },
+        {
+          "id": "QQT2Dxdu#4XuR93uN",
+          "from": "QQT2Dxdu#xHWs9u1C",
+          "to": "QQT2Dxdu#zAFbgXoh",
+          "label": "sign signed data",
+          "kind": "sync",
+          "note": "Only when no preferred key is set or the agent could not sign with it.",
+          "anchor": {
+            "repo": "github.com/miklschmidt/machine-signing",
+            "path": "src/sshsig.rs",
+            "symbol": "sign"
+          }
+        },
+        {
+          "id": "QQT2Dxdu#aY7FVHoe",
+          "from": "QQT2Dxdu#zAFbgXoh",
+          "to": "QQT2Dxdu#PrQ2h8ZS",
+          "label": "sign SHA-256 digest",
+          "kind": "sync",
+          "anchor": {
+            "repo": "github.com/miklschmidt/machine-signing",
+            "path": "src/key/mod.rs",
+            "symbol": "Key::sign"
+          }
+        },
+        {
+          "id": "QQT2Dxdu#NXE6a52E",
+          "from": "QQT2Dxdu#PrQ2h8ZS",
+          "to": "QQT2Dxdu#d6Z0gUyZ",
+          "label": "CreatePrimary, Load, Sign",
+          "kind": "sync",
+          "anchor": {
+            "repo": "github.com/miklschmidt/machine-signing",
+            "path": "src/key/tpm.rs",
+            "symbol": "sign"
+          }
+        },
+        {
+          "id": "QQT2Dxdu#nF8fhaHC",
+          "from": "QQT2Dxdu#d6Z0gUyZ",
+          "to": "QQT2Dxdu#PrQ2h8ZS",
+          "label": "ECDSA r, s",
+          "kind": "return"
+        },
+        {
+          "id": "QQT2Dxdu#G7UZul2j",
+          "from": "QQT2Dxdu#PrQ2h8ZS",
+          "to": "QQT2Dxdu#xHWs9u1C",
+          "label": "signature",
+          "kind": "return"
+        },
+        {
+          "id": "QQT2Dxdu#ZTOLTHek",
+          "from": "QQT2Dxdu#xHWs9u1C",
+          "to": "QQT2Dxdu#vEPUHAth",
+          "label": "armored SSHSIG",
+          "kind": "return"
+        },
+        {
+          "id": "QQT2Dxdu#uYBj5NbC",
+          "from": "QQT2Dxdu#vEPUHAth",
+          "to": "QQT2Dxdu#pbzqEcu0",
+          "label": "<buffer>.sig",
+          "kind": "return"
+        }
+      ]
+    },
+    {
+      "id": "QQT2Dxdu#3zhlihhF",
+      "name": "Verify a signature",
+      "summary": "git verifies signatures through the same gpg.ssh.program. The tool hands every mode other than sign to the real ssh-keygen unchanged, so verification needs no code of its own.",
+      "participants": [
+        "QQT2Dxdu#pbzqEcu0",
+        "QQT2Dxdu#vEPUHAth",
+        "QQT2Dxdu#kl43IMU6"
+      ],
+      "steps": [
+        {
+          "id": "QQT2Dxdu#ldWz0vJk",
+          "from": "QQT2Dxdu#pbzqEcu0",
+          "to": "QQT2Dxdu#vEPUHAth",
+          "label": "-Y verify | find-principals | check-novalidate",
+          "kind": "sync"
+        },
+        {
+          "id": "QQT2Dxdu#T3xpeLg0",
+          "from": "QQT2Dxdu#vEPUHAth",
+          "to": "QQT2Dxdu#kl43IMU6",
+          "label": "exec with the same arguments",
+          "kind": "sync",
+          "anchor": {
+            "repo": "github.com/miklschmidt/machine-signing",
+            "path": "src/main.rs",
+            "symbol": "main"
+          }
+        },
+        {
+          "id": "QQT2Dxdu#76iamkYT",
+          "from": "QQT2Dxdu#kl43IMU6",
+          "to": "QQT2Dxdu#pbzqEcu0",
+          "label": "exit status, principal",
+          "kind": "return"
+        }
+      ]
+    },
+    {
+      "id": "QQT2Dxdu#XbTgQ58S",
+      "name": "Initialize",
+      "summary": "The user runs init once per machine. It creates the hardware key if none exists, configures global git to sign with it, and prints the public key and the gh command that uploads it.",
+      "participants": [
+        "QQT2Dxdu#vEPUHAth",
+        "QQT2Dxdu#RVUq5RTc",
+        "QQT2Dxdu#zAFbgXoh",
+        "QQT2Dxdu#PrQ2h8ZS",
+        "QQT2Dxdu#d6Z0gUyZ",
+        "QQT2Dxdu#VC8uP45L",
+        "QQT2Dxdu#pbzqEcu0",
+        "QQT2Dxdu#ssSv3TCG"
+      ],
+      "steps": [
+        {
+          "id": "QQT2Dxdu#4VHTHztx",
+          "from": "QQT2Dxdu#vEPUHAth",
+          "to": "QQT2Dxdu#RVUq5RTc",
+          "label": "init",
+          "kind": "sync",
+          "anchor": {
+            "repo": "github.com/miklschmidt/machine-signing",
+            "path": "src/main.rs",
+            "symbol": "main"
+          }
+        },
+        {
+          "id": "QQT2Dxdu#ZiFMCH1b",
+          "from": "QQT2Dxdu#RVUq5RTc",
+          "to": "QQT2Dxdu#zAFbgXoh",
+          "label": "load_or_create",
+          "kind": "sync",
+          "anchor": {
+            "repo": "github.com/miklschmidt/machine-signing",
+            "path": "src/git_setup.rs",
+            "symbol": "init"
+          }
+        },
+        {
+          "id": "QQT2Dxdu#Sw5Ev33A",
+          "kind": "decision",
+          "question": "Key blob exists?",
+          "alternatives": [
+            {
+              "label": "no",
+              "steps": [
+                {
+                  "id": "QQT2Dxdu#jddfRiDo",
+                  "from": "QQT2Dxdu#zAFbgXoh",
+                  "to": "QQT2Dxdu#PrQ2h8ZS",
+                  "label": "generate",
+                  "kind": "sync",
+                  "anchor": {
+                    "repo": "github.com/miklschmidt/machine-signing",
+                    "path": "src/key/mod.rs",
+                    "symbol": "Key::load_or_create"
+                  }
+                },
+                {
+                  "id": "QQT2Dxdu#gyJptPoD",
+                  "from": "QQT2Dxdu#PrQ2h8ZS",
+                  "to": "QQT2Dxdu#d6Z0gUyZ",
+                  "label": "CreatePrimary, Create",
+                  "kind": "sync",
+                  "anchor": {
+                    "repo": "github.com/miklschmidt/machine-signing",
+                    "path": "src/key/tpm.rs",
+                    "symbol": "generate"
+                  }
+                },
+                {
+                  "id": "QQT2Dxdu#zAK3FM9q",
+                  "from": "QQT2Dxdu#PrQ2h8ZS",
+                  "to": "QQT2Dxdu#zAFbgXoh",
+                  "label": "blob",
+                  "kind": "return"
+                }
+              ]
+            },
+            {
+              "label": "yes",
+              "steps": [
+                {
+                  "id": "QQT2Dxdu#D0pZgaak",
+                  "from": "QQT2Dxdu#zAFbgXoh",
+                  "to": "QQT2Dxdu#PrQ2h8ZS",
+                  "label": "public_key(blob)",
+                  "kind": "sync",
+                  "anchor": {
+                    "repo": "github.com/miklschmidt/machine-signing",
+                    "path": "src/key/mod.rs",
+                    "symbol": "Key::load"
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "QQT2Dxdu#IIqzUuwL",
+          "kind": "decision",
+          "question": "gh on PATH and key missing on GitHub?",
+          "alternatives": [
+            {
+              "label": "yes",
+              "steps": [
+                {
+                  "id": "QQT2Dxdu#bryjYHlu",
+                  "from": "QQT2Dxdu#RVUq5RTc",
+                  "to": "QQT2Dxdu#ssSv3TCG",
+                  "label": "gh ssh-key add --type signing",
+                  "kind": "sync",
+                  "anchor": {
+                    "repo": "github.com/miklschmidt/machine-signing",
+                    "path": "src/git_setup.rs",
+                    "symbol": "add_to_github"
+                  }
+                }
+              ]
+            },
+            {
+              "label": "no",
+              "steps": []
+            }
+          ]
+        },
+        {
+          "id": "QQT2Dxdu#9BJmIVdz",
+          "from": "QQT2Dxdu#RVUq5RTc",
+          "to": "QQT2Dxdu#VC8uP45L",
+          "label": "set or clear, test sign",
+          "kind": "sync",
+          "anchor": {
+            "repo": "github.com/miklschmidt/machine-signing",
+            "path": "src/git_setup.rs",
+            "symbol": "init"
+          }
+        },
+        {
+          "id": "QQT2Dxdu#FsdLrfUO",
+          "from": "QQT2Dxdu#RVUq5RTc",
+          "to": "QQT2Dxdu#pbzqEcu0",
+          "label": "git config --global",
+          "kind": "sync",
+          "note": "If git cannot write the global configuration, for example a home-manager file, init prints the configuration block and exits with status 1.",
+          "anchor": {
+            "repo": "github.com/miklschmidt/machine-signing",
+            "path": "src/git_setup.rs",
+            "symbol": "set"
+          }
+        }
+      ]
+    }
+  ]
+}

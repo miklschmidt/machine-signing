@@ -1,0 +1,9 @@
+{
+  "order": 80,
+  "name": "Secure Enclave",
+  "kind": "external",
+  "responsibility": "Wrap and use P-256 keys that never leave the Apple silicon chip.",
+  "schemaVersion": 1,
+  "id": "QQT2Dxdu#ofa1Ra5m",
+  "outgoing": []
+}

@@ -1,0 +1,67 @@
+{
+  "order": 30,
+  "name": "Git setup",
+  "kind": "module",
+  "responsibility": "Configure global git for SSH signing with the hardware key.",
+  "description": "init [--touch-id] [--prefer <key.pub> [--title <name>] | --no-prefer]. --touch-id fails on Linux before any change. On macOS it makes a new key that needs Touch ID, and refuses an existing key that does not need it, with the steps to replace it. init reports whether the key needs Touch ID. Writes key.pub and prints it. When gh is on PATH, adds each key that GitHub lacks as a signing key: the machine key as '<host> TPM' or '<host> Secure Enclave', the preferred key as '<comment> via <host> agent' or the --title value. <host> is scutil --get LocalHostName on macOS, else the first part of uname -n. A gh failure prints the gh auth refresh command and init continues. Appends each key for user.email to the allowed signers file, test-signs with the preferred key and reports the result, then sets gpg.format=ssh, gpg.ssh.program, gpg.ssh.allowedSignersFile when unset, user.signingkey=<path to key.pub> and commit.gpgsign=true. When git cannot write the global configuration, it prints the settings as a configuration block.",
+  "binding": {
+    "repo": "github.com/miklschmidt/machine-signing",
+    "path": "src/git_setup.rs"
+  },
+  "schemaVersion": 1,
+  "id": "QQT2Dxdu#RVUq5RTc",
+  "outgoing": [
+    {
+      "order": 10,
+      "kind": "call",
+      "label": "create or load key",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/machine-signing",
+        "path": "src/git_setup.rs",
+        "symbol": "init"
+      },
+      "id": "QQT2Dxdu#Ikan0nl2",
+      "to": "QQT2Dxdu#zAFbgXoh"
+    },
+    {
+      "order": 15,
+      "kind": "call",
+      "label": "set, clear, test sign",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/machine-signing",
+        "path": "src/git_setup.rs",
+        "symbol": "init"
+      },
+      "id": "QQT2Dxdu#P2TUHJU0",
+      "to": "QQT2Dxdu#VC8uP45L"
+    },
+    {
+      "order": 20,
+      "kind": "call",
+      "label": "git config --global",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/machine-signing",
+        "path": "src/git_setup.rs",
+        "symbol": "set"
+      },
+      "id": "QQT2Dxdu#wc2UT8c9",
+      "to": "QQT2Dxdu#pbzqEcu0"
+    },
+    {
+      "order": 30,
+      "kind": "call",
+      "label": "gh api, gh ssh-key add",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/machine-signing",
+        "path": "src/git_setup.rs",
+        "symbol": "add_to_github"
+      },
+      "id": "QQT2Dxdu#jFAaNTRH",
+      "to": "QQT2Dxdu#ssSv3TCG"
+    }
+  ]
+}

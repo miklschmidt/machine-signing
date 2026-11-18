@@ -1,0 +1,9 @@
+{
+  "order": 70,
+  "name": "TPM 2.0",
+  "kind": "external",
+  "responsibility": "Hold the owner storage seed and sign digests, through /dev/tpmrm0.",
+  "schemaVersion": 1,
+  "id": "QQT2Dxdu#d6Z0gUyZ",
+  "outgoing": []
+}

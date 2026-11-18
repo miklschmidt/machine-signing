@@ -1,0 +1,9 @@
+{
+  "order": 90,
+  "name": "GitHub",
+  "kind": "external",
+  "responsibility": "Show commits as verified when the account has the signing key.",
+  "schemaVersion": 1,
+  "id": "QQT2Dxdu#ssSv3TCG",
+  "outgoing": []
+}

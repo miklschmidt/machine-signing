@@ -2,5 +2,19 @@
   "schemaVersion": 1,
   "id": "QQT2Dxdu",
   "name": "machine-signing",
-  "current": null
+  "current": {
+    "id": "5YGauzZJ",
+    "name": "Git commits signed by a hardware-bound SSH key",
+    "summary": "Sign git commits with a non-exportable P-256 key in the TPM or Secure Enclave, through git's SSH signing, so that a signature proves the commit came from this machine.",
+    "predecessor": null,
+    "baseline": "c638152d8488fe42310f71844f1e07bac4c61921",
+    "createdAt": "2026-11-18T01:23:49.511Z",
+    "adoptedAt": "2026-11-18T03:40:04.246Z",
+    "reason": "machine-signing 0.1.0 implements this design: TPM and Secure Enclave keys with opt-in Touch ID, SSH signing, the preferred agent key, and init with GitHub registration. CI and a real Mac verified it.",
+    "previousCurrent": null
+  },
+  "retiredIds": [
+    "QQT2Dxdu#PrWfck5P",
+    "QQT2Dxdu#c6bj1i40"
+  ]
 }

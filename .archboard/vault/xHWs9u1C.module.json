@@ -1,0 +1,41 @@
+{
+  "order": 20,
+  "name": "SSH signature",
+  "kind": "module",
+  "responsibility": "Build and armor SSHSIG signatures from a hardware ECDSA signature.",
+  "description": "Parses the -Y sign options that git and jj pass. Routing compares the -f key with key.pub, which init wrote, and never reads the key file, so an unusable machine key never blocks another key. A -f key that is not the machine key, including a private key file, goes to ssh-keygen unchanged, so per-repository signing keys keep working. For the machine key, it tries the preferred key first, then builds the SSHSIG with the ssh-key crate (namespace, sha512 message hash) and has the hardware sign the SHA-256 digest of the signed data.",
+  "binding": {
+    "repo": "github.com/miklschmidt/machine-signing",
+    "path": "src/sshsig.rs"
+  },
+  "schemaVersion": 1,
+  "id": "QQT2Dxdu#xHWs9u1C",
+  "outgoing": [
+    {
+      "order": 5,
+      "kind": "call",
+      "label": "sign first",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/machine-signing",
+        "path": "src/sshsig.rs",
+        "symbol": "sign"
+      },
+      "id": "QQT2Dxdu#80QXXbuD",
+      "to": "QQT2Dxdu#VC8uP45L"
+    },
+    {
+      "order": 10,
+      "kind": "call",
+      "label": "public key, sign",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/machine-signing",
+        "path": "src/sshsig.rs",
+        "symbol": "sign"
+      },
+      "id": "QQT2Dxdu#UUJnt3m1",
+      "to": "QQT2Dxdu#zAFbgXoh"
+    }
+  ]
+}

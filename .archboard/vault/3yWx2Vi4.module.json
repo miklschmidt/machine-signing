@@ -1,0 +1,29 @@
+{
+  "order": 20,
+  "name": "Secure Enclave backend",
+  "kind": "module",
+  "responsibility": "Create and use a Secure Enclave P-256 signing key through CryptoKit.",
+  "description": "secure_enclave.swift exports @_cdecl functions (generate, public key, needs user presence, sign) that build.rs compiles with swiftc into a static library. The Rust side calls them through FFI. It stores the CryptoKit dataRepresentation blob, because keychain storage of Secure Enclave keys needs entitlements that an unsigned CLI does not have. With init --touch-id, the key is created with the userPresence access control, so each signature needs Touch ID or the login password. This is fixed at creation. The probe signs a test message with an LAContext that does not allow interaction: a not-interactive error means that the key needs user presence, and no prompt appears. Signing sets the prompt reason and maps a session without a prompt and a canceled prompt to clear errors.",
+  "binding": {
+    "repo": "github.com/miklschmidt/machine-signing",
+    "path": "src/key/secure_enclave.rs"
+  },
+  "schemaVersion": 1,
+  "id": "QQT2Dxdu#3yWx2Vi4",
+  "parent": "QQT2Dxdu#BeyvwQg3",
+  "outgoing": [
+    {
+      "order": 10,
+      "kind": "call",
+      "label": "CryptoKit",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/machine-signing",
+        "path": "src/key/secure_enclave.swift",
+        "symbol": "ms_se_sign"
+      },
+      "id": "QQT2Dxdu#avZ4oZ1W",
+      "to": "QQT2Dxdu#ofa1Ra5m"
+    }
+  ]
+}

@@ -31,7 +31,7 @@ fn main() {
     println!("cargo:rustc-link-search=native={}", out.display());
     println!("cargo:rustc-link-lib=static=machine_signing_se");
     // The static library's objects ask for the Swift runtime, its back-deployment
-    // libraries (swiftCompatibility56 and others) and CryptoKit by autolink entries.
+    // libraries (swiftCompatibility56 and others) and the frameworks by autolink entries.
     // The runtime's .tbd files are in the SDK, the back-deployment archives in the toolchain.
     let sdk = xcrun(&["--sdk", "macosx", "--show-sdk-path"]);
     println!("cargo:rustc-link-search=native={sdk}/usr/lib/swift");
@@ -45,7 +45,10 @@ fn main() {
         usr.join("lib/swift/macosx").display()
     );
     println!("cargo:rustc-link-lib=framework=CryptoKit");
+    println!("cargo:rustc-link-lib=framework=CryptoTokenKit");
     println!("cargo:rustc-link-lib=framework=Foundation");
+    println!("cargo:rustc-link-lib=framework=LocalAuthentication");
+    println!("cargo:rustc-link-lib=framework=Security");
     println!("cargo:rustc-link-arg=-Wl,-rpath,/usr/lib/swift");
 }
 

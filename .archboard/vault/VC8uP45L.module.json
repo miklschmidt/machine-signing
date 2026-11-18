@@ -1,0 +1,41 @@
+{
+  "order": 25,
+  "name": "Preferred key",
+  "kind": "module",
+  "responsibility": "Sign with an SSH agent key, such as a YubiKey PIV key, when the agent can.",
+  "description": "prefer.pub beside the machine key records the preference. Signing runs ssh-keygen -Y sign -U with a 30-second limit and accepts only a clean exit and a signature by that key. Any failure falls back to the machine key, and a one-line notice goes to /dev/tty, because git hides the stderr of a signing program that succeeds. Through the agent, a cancelled PIN, an unplugged YubiKey and a stale PKCS#11 session look the same, so the preference is best effort.",
+  "binding": {
+    "repo": "github.com/miklschmidt/machine-signing",
+    "path": "src/prefer.rs"
+  },
+  "schemaVersion": 1,
+  "id": "QQT2Dxdu#VC8uP45L",
+  "outgoing": [
+    {
+      "order": 10,
+      "kind": "call",
+      "label": "-Y sign -U -f prefer.pub",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/machine-signing",
+        "path": "src/prefer.rs",
+        "symbol": "sign"
+      },
+      "id": "QQT2Dxdu#NcWG8ADQ",
+      "to": "QQT2Dxdu#kl43IMU6"
+    },
+    {
+      "order": 20,
+      "kind": "call",
+      "label": "key directory, machine key check",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/machine-signing",
+        "path": "src/prefer.rs",
+        "symbol": "path"
+      },
+      "id": "QQT2Dxdu#rNs15Xys",
+      "to": "QQT2Dxdu#zAFbgXoh"
+    }
+  ]
+}

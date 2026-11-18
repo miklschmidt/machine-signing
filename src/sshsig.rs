@@ -102,7 +102,7 @@ fn sign(
         match prefer::sign(preferred, namespace, message) {
             Ok(signature) => return Ok(signature),
             Err(err) => notify(&format!(
-                "signed with the machine key, because the agent could not sign with {}: {err:#}. \
+                "signing with the machine key instead, because the agent could not sign with {}: {err:#}. \
                  If the YubiKey was unplugged since ssh-add, run ssh-add -e and ssh-add -s with its PKCS#11 provider",
                 prefer::name(preferred)
             )),

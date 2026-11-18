@@ -65,13 +65,14 @@ impl Key {
         })
     }
 
-    /// Loads the key, or creates it in the hardware when no key file exists.
-    pub fn load_or_create() -> Result<Loaded> {
+    /// Loads the key, or creates it in the hardware when no key file exists. With `touch_id`, a
+    /// new key needs Touch ID or the password for each signature.
+    pub fn load_or_create(touch_id: bool) -> Result<Loaded> {
         let path = Self::path()?;
         if path.exists() {
             return Ok(Loaded::Existing(Self::load()?));
         }
-        let blob = backend::generate()?;
+        let blob = backend::generate(touch_id)?;
         write_key_file(&path, &blob)?;
         Ok(Loaded::Created(Self::from_blob(blob)?))
     }
@@ -79,6 +80,13 @@ impl Key {
     fn from_blob(blob: Vec<u8>) -> Result<Key> {
         let public = EcdsaPublicKey::from_sec1_bytes(&backend::public_key(&blob)?)?.into();
         Ok(Key { blob, public })
+    }
+
+    /// Whether each signature needs Touch ID or the password. This never shows a prompt.
+    pub fn needs_touch_id(&self) -> Result<bool> {
+        backend::needs_touch_id(&self.blob).context(
+            "cannot tell whether the machine key needs Touch ID. Run the same command again",
+        )
     }
 
     pub fn sign(&self, data: &[u8]) -> Result<p256::ecdsa::Signature> {

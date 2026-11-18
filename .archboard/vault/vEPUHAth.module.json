@@ -1,0 +1,54 @@
+{
+  "order": 10,
+  "name": "CLI",
+  "kind": "app",
+  "responsibility": "Route `init`, `-Y sign` and every other ssh-keygen mode.",
+  "description": "One binary that git runs as gpg.ssh.program. `-Y sign` signs with the hardware key. Every other `-Y` mode execs the real ssh-keygen with the same arguments, so verification keeps working. `init` creates the key and configures git. There is no daemon or agent.",
+  "binding": {
+    "repo": "github.com/miklschmidt/machine-signing",
+    "path": "src/main.rs"
+  },
+  "schemaVersion": 1,
+  "id": "QQT2Dxdu#vEPUHAth",
+  "outgoing": [
+    {
+      "order": 10,
+      "kind": "call",
+      "label": "sign buffer",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/machine-signing",
+        "path": "src/main.rs",
+        "symbol": "main"
+      },
+      "id": "QQT2Dxdu#oGt5IFyQ",
+      "to": "QQT2Dxdu#xHWs9u1C"
+    },
+    {
+      "order": 20,
+      "kind": "call",
+      "label": "configure git",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/machine-signing",
+        "path": "src/main.rs",
+        "symbol": "main"
+      },
+      "id": "QQT2Dxdu#arrD3rbv",
+      "to": "QQT2Dxdu#RVUq5RTc"
+    },
+    {
+      "order": 30,
+      "kind": "call",
+      "label": "exec other -Y modes",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/machine-signing",
+        "path": "src/main.rs",
+        "symbol": "main"
+      },
+      "id": "QQT2Dxdu#hLx0urQD",
+      "to": "QQT2Dxdu#kl43IMU6"
+    }
+  ]
+}
