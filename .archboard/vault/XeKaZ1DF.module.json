@@ -1,0 +1,9 @@
+{
+  "order": 65,
+  "name": "SSH agent",
+  "kind": "external",
+  "responsibility": "Hold the preferred key, for example a YubiKey PIV key loaded through PKCS#11.",
+  "schemaVersion": 1,
+  "id": "QQT2Dxdu#XeKaZ1DF",
+  "outgoing": []
+}

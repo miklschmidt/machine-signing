@@ -1,0 +1,18 @@
+{
+  "order": 50,
+  "name": "git",
+  "kind": "external",
+  "responsibility": "Run gpg.ssh.program to sign and verify commits.",
+  "schemaVersion": 1,
+  "id": "QQT2Dxdu#pbzqEcu0",
+  "outgoing": [
+    {
+      "order": 10,
+      "kind": "call",
+      "label": "gpg.ssh.program -Y …",
+      "emphasis": "normal",
+      "id": "QQT2Dxdu#uhOx9WlH",
+      "to": "QQT2Dxdu#vEPUHAth"
+    }
+  ]
+}

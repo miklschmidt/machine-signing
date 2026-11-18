@@ -1,0 +1,42 @@
+{
+  "order": 5,
+  "name": "Key file",
+  "kind": "module",
+  "responsibility": "Store the hardware-wrapped key blob and call the platform backend.",
+  "description": "Key::load_or_create creates the key only when no key file exists. The key file is the only state; key.pub beside it is derived by init.",
+  "binding": {
+    "repo": "github.com/miklschmidt/machine-signing",
+    "path": "src/key/mod.rs"
+  },
+  "schemaVersion": 1,
+  "id": "QQT2Dxdu#zAFbgXoh",
+  "parent": "QQT2Dxdu#BeyvwQg3",
+  "outgoing": [
+    {
+      "order": 10,
+      "kind": "call",
+      "label": "generate, needs_touch_id, public_key, sign",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/machine-signing",
+        "path": "src/key/mod.rs",
+        "symbol": "Key::sign"
+      },
+      "id": "QQT2Dxdu#IBXkO2Z7",
+      "to": "QQT2Dxdu#PrQ2h8ZS"
+    },
+    {
+      "order": 20,
+      "kind": "call",
+      "label": "generate, needs_touch_id, public_key, sign",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/machine-signing",
+        "path": "src/key/mod.rs",
+        "symbol": "Key::sign"
+      },
+      "id": "QQT2Dxdu#4l4RGHmn",
+      "to": "QQT2Dxdu#3yWx2Vi4"
+    }
+  ]
+}

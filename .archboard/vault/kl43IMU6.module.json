@@ -1,0 +1,18 @@
+{
+  "order": 60,
+  "name": "ssh-keygen",
+  "kind": "external",
+  "responsibility": "Verify SSH signatures against the allowed signers file.",
+  "schemaVersion": 1,
+  "id": "QQT2Dxdu#kl43IMU6",
+  "outgoing": [
+    {
+      "order": 10,
+      "kind": "call",
+      "label": "sign with agent key",
+      "emphasis": "normal",
+      "id": "QQT2Dxdu#QuCktSzq",
+      "to": "QQT2Dxdu#XeKaZ1DF"
+    }
+  ]
+}

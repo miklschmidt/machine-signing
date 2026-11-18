@@ -1,0 +1,29 @@
+{
+  "order": 10,
+  "name": "TPM backend",
+  "kind": "module",
+  "responsibility": "Create and use an ECDSA P-256 child key under the owner storage primary.",
+  "description": "Uses tss-esapi. Recreates the deterministic ECC P-256 storage primary on each use, loads the saved public and private blobs, and signs an external digest with a null hashcheck ticket. The key is fixedTPM, fixedParent, userWithAuth and noDA, with an empty auth value. No persistent handles.",
+  "binding": {
+    "repo": "github.com/miklschmidt/machine-signing",
+    "path": "src/key/tpm.rs"
+  },
+  "schemaVersion": 1,
+  "id": "QQT2Dxdu#PrQ2h8ZS",
+  "parent": "QQT2Dxdu#BeyvwQg3",
+  "outgoing": [
+    {
+      "order": 10,
+      "kind": "call",
+      "label": "CreatePrimary, Load, Sign",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/machine-signing",
+        "path": "src/key/tpm.rs",
+        "symbol": "sign"
+      },
+      "id": "QQT2Dxdu#467kLw1A",
+      "to": "QQT2Dxdu#d6Z0gUyZ"
+    }
+  ]
+}
