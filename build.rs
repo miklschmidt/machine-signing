@@ -5,6 +5,8 @@ use std::path::PathBuf;
 use std::process::Command;
 
 fn main() {
+    // Without this, every change in the package reruns the build script and relinks the binary.
+    println!("cargo:rerun-if-changed=build.rs");
     let os = std::env::var("CARGO_CFG_TARGET_OS").unwrap();
     let arch = std::env::var("CARGO_CFG_TARGET_ARCH").unwrap();
     if os != "macos" || arch != "aarch64" {
