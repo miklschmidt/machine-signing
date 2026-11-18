@@ -51,14 +51,20 @@ pub fn run(all_args: &[OsString]) -> Result<()> {
     let namespace = namespace.context("-Y sign needs -n <namespace>")?;
     let key_file = key_file.context("-Y sign needs -f <public key file>")?;
 
-    let machine_key = match PublicKey::read_openssh_file(&key_file) {
-        Ok(requested) => Key::load_existing()?.filter(|key| requested.key_data() == &key.public),
-        // git also accepts a private key file, which ssh-keygen reads. It is never the machine key.
-        Err(_) => None,
-    };
-    let Some(key) = machine_key else {
+    // init points git at the machine's public key file; jj or a `key::` literal passes a copy of it.
+    // Routing never reads the key file, so an unusable machine key never stops another key, and a
+    // request for the machine key gets the error that says how to recover. git also accepts a
+    // private key file, which ssh-keygen reads. It is never the machine key.
+    let public_path = Key::public_path()?;
+    let is_machine_key = key_file == public_path
+        || PublicKey::read_openssh_file(&key_file).is_ok_and(|requested| {
+            PublicKey::read_openssh_file(&public_path)
+                .is_ok_and(|machine| requested.key_data() == machine.key_data())
+        });
+    if !is_machine_key {
         return exec_ssh_keygen(all_args);
-    };
+    }
+    let key = Key::load()?;
     let preferred = prefer::load()?;
     let sign = |message: &[u8]| sign(&key, preferred.as_ref(), &namespace, message);
 

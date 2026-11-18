@@ -65,14 +65,6 @@ impl Key {
         })
     }
 
-    /// Loads the key, or returns `None` when no key file exists.
-    pub fn load_existing() -> Result<Option<Key>> {
-        if !Self::path()?.exists() {
-            return Ok(None);
-        }
-        Self::load().map(Some)
-    }
-
     /// Loads the key, or creates it in the hardware when no key file exists.
     pub fn load_or_create() -> Result<Loaded> {
         let path = Self::path()?;

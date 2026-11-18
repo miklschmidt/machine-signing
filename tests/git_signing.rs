@@ -207,10 +207,31 @@ fn signs_commits_that_git_verifies() {
     let (other, _) = machine.ssh_key("other");
     let message = machine.home.join("message");
     std::fs::write(&message, "data").unwrap();
-    for key in [other.with_extension("pub"), other] {
-        let mut sign = machine.tool(&["-Y", "sign", "-n", "git", "-f"]);
-        run(sign.arg(key).arg(&message));
-        std::fs::remove_file(machine.home.join("message.sig")).unwrap();
+    let sign_with_other = || {
+        for key in [other.with_extension("pub"), other.clone()] {
+            let mut sign = machine.tool(&["-Y", "sign", "-n", "git", "-f"]);
+            run(sign.arg(key).arg(&message));
+            std::fs::remove_file(machine.home.join("message.sig")).unwrap();
+        }
+    };
+    sign_with_other();
+
+    // A machine key file that the hardware cannot use, or no key file, must not stop other keys.
+    // A commit with the machine key then says how to recover.
+    let key_file = machine.home.join(".local/share/machine-signing/key");
+    for broken in [Some("damaged"), None] {
+        match broken {
+            Some(blob) => std::fs::write(&key_file, blob).unwrap(),
+            None => std::fs::remove_file(&key_file).unwrap(),
+        }
+        sign_with_other();
+        let commit = machine
+            .git(&["commit", "-q", "--allow-empty", "-m", "signed"])
+            .output()
+            .unwrap();
+        let stderr = String::from_utf8_lossy(&commit.stderr);
+        assert!(!commit.status.success());
+        assert!(stderr.contains("`machine-signing init`"), "{stderr}");
     }
 }
 
