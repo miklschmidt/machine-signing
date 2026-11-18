@@ -3,6 +3,7 @@
 // message into `err` (at most `errCap` bytes, not NUL-terminated) and its length into `errLen`.
 
 import CryptoKit
+import CryptoTokenKit
 import Foundation
 import LocalAuthentication
 import Security
@@ -28,20 +29,27 @@ private func load(
         dataRepresentation: Data(bytes: blob, count: blobLen), authenticationContext: context)
 }
 
-/// Whether the error, or an error under it, says that the key needs Touch ID or the password
-/// and the context does not allow the prompt.
-private func isNotInteractive(_ error: Error) -> Bool {
+private enum AuthenticationFailure {
+    case notInteractive
+    case userCanceled
+}
+
+private func authenticationFailure(_ error: Error) -> AuthenticationFailure? {
     var next: NSError? = error as NSError
     while let error = next {
         switch (error.domain, error.code) {
         case (LAErrorDomain, LAError.notInteractive.rawValue),
              (NSOSStatusErrorDomain, Int(errSecInteractionNotAllowed)):
-            return true
+            return .notInteractive
+        case (LAErrorDomain, LAError.userCancel.rawValue),
+             (NSOSStatusErrorDomain, Int(errSecUserCanceled)),
+             (TKErrorDomain, TKError.canceledByUser.rawValue):
+            return .userCanceled
         default:
             next = error.userInfo[NSUnderlyingErrorKey] as? NSError
         }
     }
-    return false
+    return nil
 }
 
 /// Creates a key in the Secure Enclave and writes its wrapped `dataRepresentation` blob.
@@ -103,7 +111,7 @@ public func ms_se_needs_user_presence(
         _ = try load(blob, blobLen, context).signature(for: Data("machine-signing probe".utf8))
         out.pointee = 0
         return 0
-    } catch where isNotInteractive(error) {
+    } catch where authenticationFailure(error) == .notInteractive {
         out.pointee = 1
         return 0
     } catch {
@@ -128,12 +136,13 @@ public func ms_se_sign(
             return fail("the Secure Enclave returned a signature that is not 64 bytes", err, errCap, errLen)
         }
         return 0
-    } catch where isNotInteractive(error) {
+    } catch where authenticationFailure(error) == .notInteractive {
         return fail(
             "the key needs Touch ID or your password, and this session cannot show the prompt, "
                 + "for example because it is an SSH session", err, errCap, errLen)
-    } catch let error as LAError where error.code == .userCancel {
-        return fail("you canceled the Touch ID prompt", err, errCap, errLen)
+    } catch where authenticationFailure(error) == .userCanceled {
+        return fail("You canceled the authentication prompt. Retry the Git command and complete the prompt.",
+                    err, errCap, errLen)
     } catch {
         return fail("the Secure Enclave cannot sign: \(error)", err, errCap, errLen)
     }

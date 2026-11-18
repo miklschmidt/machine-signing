@@ -45,6 +45,7 @@ fn main() {
         usr.join("lib/swift/macosx").display()
     );
     println!("cargo:rustc-link-lib=framework=CryptoKit");
+    println!("cargo:rustc-link-lib=framework=CryptoTokenKit");
     println!("cargo:rustc-link-lib=framework=Foundation");
     println!("cargo:rustc-link-lib=framework=LocalAuthentication");
     println!("cargo:rustc-link-lib=framework=Security");
