@@ -196,6 +196,7 @@ fn gitconfig(settings: &[(&str, String)]) -> String {
             Some((section, sub)) => format!("[{section} \"{sub}\"]"),
             None => format!("[{section}]"),
         };
+        let value = value.replace('\\', r"\\").replace('"', r#"\""#);
         text.push_str(&format!("{header}\n\t{key} = \"{value}\"\n"));
     }
     text
@@ -343,5 +344,25 @@ mod tests {
             .output()
             .unwrap();
         assert_eq!(String::from_utf8(out.stdout).unwrap(), title);
+    }
+
+    #[test]
+    fn printed_gitconfig_reads_back_the_same_values() {
+        let path = r#"/home/a "b"\c/key.pub"#;
+        let file = tempfile::NamedTempFile::new().unwrap();
+        let settings = [
+            ("user.signingkey", path.to_owned()),
+            ("gpg.ssh.program", "machine-signing".to_owned()),
+        ];
+        std::fs::write(file.path(), gitconfig(&settings)).unwrap();
+        for (name, value) in settings {
+            let out = Command::new("git")
+                .args(["config", "--file"])
+                .arg(file.path())
+                .args(["--get", name])
+                .output()
+                .unwrap();
+            assert_eq!(String::from_utf8(out.stdout).unwrap().trim_end(), value);
+        }
     }
 }
