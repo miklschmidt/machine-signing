@@ -2,6 +2,7 @@
 
 use crate::key::{HARDWARE, Key, Loaded};
 use anyhow::{Context, Result, bail};
+use std::ffi::OsStr;
 use std::path::{Path, PathBuf};
 use std::process::Command;
 
@@ -30,11 +31,8 @@ pub fn init() -> Result<()> {
 
     eprintln!("Public key:");
     println!("{public_line}");
-    eprintln!(
-        "\nAdd it to GitHub as a signing key:\n  gh ssh-key add '{}' --type signing --title 'machine-signing@{host}'",
-        public_path.display()
-    );
     eprintln!();
+    add_to_github(&public, &public_path, &format!("machine-signing@{host}"));
 
     let allowed_signers = add_allowed_signer(&public)?;
     let mut settings = vec![
@@ -132,24 +130,73 @@ fn gitconfig(settings: &[(&str, String)]) -> String {
     text
 }
 
+/// Adds the key to GitHub as a signing key through gh, when gh is on PATH and GitHub does not have the key yet.
+/// A failure here leaves the local setup intact, so it prints what to do instead of failing init.
+fn add_to_github(public: &ssh_key::PublicKey, public_path: &Path, title: &str) {
+    let manual = format!(
+        "gh ssh-key add '{}' --type signing --title '{title}'",
+        public_path.display()
+    );
+    if find_on_path(OsStr::new("gh")).is_none() {
+        eprintln!("Add the key to GitHub as a signing key:\n  {manual}");
+        return;
+    }
+    let listed = Command::new("gh")
+        .args([
+            "api",
+            "user/ssh_signing_keys",
+            "--paginate",
+            "--jq",
+            ".[].key",
+        ])
+        .output();
+    if let Ok(listed) = listed
+        && listed.status.success()
+        && String::from_utf8_lossy(&listed.stdout)
+            .lines()
+            .filter_map(|line| ssh_key::PublicKey::from_openssh(line).ok())
+            .any(|key| key.key_data() == public.key_data())
+    {
+        eprintln!("GitHub already has this signing key");
+        return;
+    }
+    let added = Command::new("gh")
+        .args(["ssh-key", "add"])
+        .arg(public_path)
+        .args(["--type", "signing", "--title", title])
+        .output();
+    match added {
+        Ok(out) if out.status.success() => {
+            eprintln!("Added the key to GitHub as the signing key {title}")
+        }
+        Ok(out) => eprintln!(
+            "gh could not add the key to GitHub: {}\n\
+             If gh needs the permission, run:\n  gh auth refresh -h github.com -s admin:ssh_signing_key\n\
+             Then run machine-signing init again, or add the key yourself:\n  {manual}",
+            String::from_utf8_lossy(&out.stderr).trim()
+        ),
+        Err(err) => eprintln!("cannot run gh: {err}\nAdd the key yourself:\n  {manual}"),
+    }
+}
+
 /// The value git runs as gpg.ssh.program: the bare name when PATH finds this executable, else its absolute path.
 fn program() -> Result<String> {
     let exe = std::env::current_exe()?.canonicalize()?;
     let name = exe.file_name().context("the executable has no file name")?;
-    let on_path = std::env::var_os("PATH").is_some_and(|paths| {
-        std::env::split_paths(&paths)
-            .find_map(|dir| {
-                dir.join(name)
-                    .canonicalize()
-                    .ok()
-                    .filter(|found| is_executable(found))
-            })
-            .is_some_and(|found| found == exe)
-    });
-    Ok(if on_path {
+    Ok(if find_on_path(name) == Some(exe.clone()) {
         name.to_string_lossy().into_owned()
     } else {
         exe.to_string_lossy().into_owned()
+    })
+}
+
+/// The canonical path of the first executable called `name` on PATH.
+fn find_on_path(name: &OsStr) -> Option<PathBuf> {
+    std::env::split_paths(&std::env::var_os("PATH")?).find_map(|dir| {
+        dir.join(name)
+            .canonicalize()
+            .ok()
+            .filter(|found| is_executable(found))
     })
 }
 

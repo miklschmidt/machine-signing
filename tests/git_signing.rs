@@ -69,9 +69,26 @@ fn signs_commits_that_git_verifies() {
 
     let home = tmp.path().join("home");
     std::fs::create_dir(&home).unwrap();
+    // A fake gh before the real one on PATH: it lists the keys it was given, and logs each add.
+    let bin = tmp.path().join("bin");
+    std::fs::create_dir(&bin).unwrap();
+    let gh = bin.join("gh");
+    std::fs::write(
+        &gh,
+        "#!/bin/sh\ncase \"$1\" in\n  api) cat \"$GH_KEYS\" 2>/dev/null ;;\n  \
+         ssh-key) cut -d' ' -f1,2 \"$3\" >> \"$GH_KEYS\"; echo \"$@\" >> \"$GH_LOG\" ;;\nesac\n",
+    )
+    .unwrap();
+    std::fs::set_permissions(&gh, std::os::unix::fs::PermissionsExt::from_mode(0o755)).unwrap();
+    let mut path = vec![bin.clone()];
+    path.extend(std::env::split_paths(&std::env::var_os("PATH").unwrap()));
+    let path = std::env::join_paths(path).unwrap();
+    let gh_log = tmp.path().join("gh.log");
     let env = |cmd: &mut Command| {
         cmd.env_clear()
-            .env("PATH", std::env::var_os("PATH").unwrap())
+            .env("PATH", &path)
+            .env("GH_KEYS", tmp.path().join("gh-keys"))
+            .env("GH_LOG", &gh_log)
             .env("HOME", &home)
             .env("TCTI", &tcti)
             .env("GIT_CONFIG_NOSYSTEM", "1");
@@ -98,6 +115,13 @@ fn signs_commits_that_git_verifies() {
     let second = run(tool().arg("init")).stdout;
     assert_eq!(first, second, "init must reuse the existing key");
     assert!(String::from_utf8_lossy(&first).starts_with("ecdsa-sha2-nistp256 "));
+    let gh_calls = std::fs::read_to_string(&gh_log).unwrap();
+    assert_eq!(
+        gh_calls.lines().count(),
+        1,
+        "init must add the key to GitHub once: {gh_calls}"
+    );
+    assert!(gh_calls.contains("--type signing"), "{gh_calls}");
 
     let repo = home.join("repo");
     std::fs::create_dir(&repo).unwrap();

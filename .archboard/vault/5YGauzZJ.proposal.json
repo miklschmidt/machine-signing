@@ -343,7 +343,7 @@
         "name": "Git setup",
         "kind": "module",
         "responsibility": "Configure global git for SSH signing with the hardware key.",
-        "description": "Writes key.pub beside the key file and prints it with the gh command that uploads it as a signing key. Appends the key for user.email to the allowed signers file. Then sets gpg.format=ssh, gpg.ssh.program, gpg.ssh.allowedSignersFile when unset, user.signingkey=<path to key.pub> and commit.gpgsign=true, and prints each changed value. A path, not a key:: literal, keeps git from passing -U. When git cannot write the global configuration, it prints the settings as a configuration block. It does not set tag.gpgsign.",
+        "description": "Writes key.pub beside the key file and prints it. When gh is on PATH, lists the account's signing keys and adds the key with gh ssh-key add --type signing only when GitHub does not have it. A gh failure prints the gh auth refresh command and the manual gh command, and init continues. Then appends the key for user.email to the allowed signers file and sets gpg.format=ssh, gpg.ssh.program, gpg.ssh.allowedSignersFile when unset, user.signingkey=<path to key.pub> and commit.gpgsign=true, printing each changed value. A path, not a key:: literal, keeps git from passing -U. When git cannot write the global configuration, it prints the settings as a configuration block. It does not set tag.gpgsign.",
         "binding": {
           "repo": "machine-signing",
           "path": "src/git_setup.rs"
@@ -405,6 +405,31 @@
     {
       "type": "place",
       "subject": "QQT2Dxdu#wc2UT8c9",
+      "placement": {
+        "holder": "QQT2Dxdu#RVUq5RTc"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "QQT2Dxdu#jFAaNTRH",
+      "kind": "relationship",
+      "value": {
+        "order": 30,
+        "kind": "call",
+        "label": "gh api, gh ssh-key add",
+        "emphasis": "normal",
+        "anchor": {
+          "repo": "machine-signing",
+          "path": "src/git_setup.rs",
+          "symbol": "add_to_github"
+        },
+        "id": "QQT2Dxdu#jFAaNTRH",
+        "to": "QQT2Dxdu#ssSv3TCG"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "QQT2Dxdu#jFAaNTRH",
       "placement": {
         "holder": "QQT2Dxdu#RVUq5RTc"
       }
@@ -530,6 +555,26 @@
     {
       "type": "place",
       "subject": "QQT2Dxdu#ofa1Ra5m",
+      "placement": {
+        "holder": "QQT2Dxdu"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "QQT2Dxdu#ssSv3TCG",
+      "kind": "module",
+      "value": {
+        "order": 90,
+        "name": "GitHub",
+        "kind": "external",
+        "responsibility": "Show commits as verified when the account has the signing key.",
+        "schemaVersion": 1,
+        "id": "QQT2Dxdu#ssSv3TCG"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "QQT2Dxdu#ssSv3TCG",
       "placement": {
         "holder": "QQT2Dxdu"
       }
@@ -870,7 +915,8 @@
           "QQT2Dxdu#zAFbgXoh",
           "QQT2Dxdu#PrQ2h8ZS",
           "QQT2Dxdu#d6Z0gUyZ",
-          "QQT2Dxdu#pbzqEcu0"
+          "QQT2Dxdu#pbzqEcu0",
+          "QQT2Dxdu#ssSv3TCG"
         ]
       }
     },
@@ -950,7 +996,7 @@
       "subject": "QQT2Dxdu#Sw5Ev33A",
       "placement": {
         "holder": "QQT2Dxdu#XbTgQ58S",
-        "before": "QQT2Dxdu#FsdLrfUO"
+        "before": "QQT2Dxdu#IIqzUuwL"
       }
     },
     {
@@ -1047,6 +1093,53 @@
       "subject": "QQT2Dxdu#D0pZgaak",
       "placement": {
         "holder": "QQT2Dxdu#Sw5Ev33A",
+        "alternative": "yes"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "QQT2Dxdu#IIqzUuwL",
+      "kind": "step",
+      "value": {
+        "id": "QQT2Dxdu#IIqzUuwL",
+        "kind": "decision",
+        "question": "gh on PATH and key missing on GitHub?",
+        "alternatives": [
+          "yes",
+          "no"
+        ]
+      }
+    },
+    {
+      "type": "place",
+      "subject": "QQT2Dxdu#IIqzUuwL",
+      "placement": {
+        "holder": "QQT2Dxdu#XbTgQ58S",
+        "before": "QQT2Dxdu#FsdLrfUO"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "QQT2Dxdu#bryjYHlu",
+      "kind": "step",
+      "value": {
+        "id": "QQT2Dxdu#bryjYHlu",
+        "from": "QQT2Dxdu#RVUq5RTc",
+        "to": "QQT2Dxdu#ssSv3TCG",
+        "label": "gh ssh-key add --type signing",
+        "kind": "sync",
+        "anchor": {
+          "repo": "machine-signing",
+          "path": "src/git_setup.rs",
+          "symbol": "add_to_github"
+        }
+      }
+    },
+    {
+      "type": "place",
+      "subject": "QQT2Dxdu#bryjYHlu",
+      "placement": {
+        "holder": "QQT2Dxdu#IIqzUuwL",
         "alternative": "yes"
       }
     },

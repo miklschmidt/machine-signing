@@ -36,18 +36,20 @@ machine-signing init
 
 1. If no key exists, it creates the key in the hardware. It keeps an existing key.
 2. It writes the public key to `key.pub` beside the key file, and prints it.
-3. It adds the key for your `user.email` to the allowed signers file, so that `git log --show-signature` can verify your commits.
-4. It sets `gpg.format=ssh`, `gpg.ssh.program=machine-signing`, `user.signingkey` and `commit.gpgsign=true` in your global git configuration. It prints each value that it changes.
+3. If `gh` is on your PATH, it adds the key to your GitHub account as a signing key. When GitHub already has the key, it skips this step.
+4. It adds the key for your `user.email` to the allowed signers file, so that `git log --show-signature` can verify your commits.
+5. It sets `gpg.format=ssh`, `gpg.ssh.program=machine-signing`, `user.signingkey` and `commit.gpgsign=true` in your global git configuration. It prints each value that it changes.
+
+To add signing keys, `gh` needs the `admin:ssh_signing_key` scope. To give `gh` that scope, run:
+
+```sh
+gh auth refresh -h github.com -s admin:ssh_signing_key
+```
+
+If `gh` is not on your PATH, or `gh` cannot add the key, `init` prints the `gh ssh-key add` command for you to run.
 
 If git cannot write your global configuration, `init` prints the configuration for you to add yourself.
 For example, git cannot write a `~/.config/git/config` that home-manager manages.
-
-To show your commits as verified on GitHub, add the key as a signing key.
-`init` prints the command, for example:
-
-```sh
-gh ssh-key add ~/.local/share/machine-signing/key.pub --type signing --title machine-signing@myhost
-```
 
 You can run `init` again at any time. It does not replace the key.
 
