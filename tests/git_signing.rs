@@ -177,7 +177,14 @@ fn signs_commits_that_git_verifies() {
     let machine = Machine::new();
 
     let first = run(&mut machine.tool(&["init"])).stdout;
-    let second = run(&mut machine.tool(&["init"])).stdout;
+    // An empty PATH entry finds the binary only from its own directory, so gpg.ssh.program must
+    // not be the bare name, or git cannot run it in the repository.
+    let exe = std::path::Path::new(env!("CARGO_BIN_EXE_machine-signing"));
+    let mut path = machine.path.clone();
+    path.push(":");
+    let mut init = machine.tool(&["init"]);
+    init.env("PATH", path).current_dir(exe.parent().unwrap());
+    let second = run(&mut init).stdout;
     assert_eq!(first, second, "init must reuse the existing key");
     assert!(String::from_utf8_lossy(&first).starts_with("ecdsa-sha2-nistp256 "));
     let gh_calls = machine.gh_calls();

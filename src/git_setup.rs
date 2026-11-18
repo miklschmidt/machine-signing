@@ -285,14 +285,17 @@ fn program() -> Result<String> {
     })
 }
 
-/// The canonical path of the first executable called `name` on PATH.
+/// The canonical path of the first executable called `name` on PATH. A relative PATH entry, such
+/// as an empty one, depends on the current directory, so the search skips it.
 fn find_on_path(name: &OsStr) -> Option<PathBuf> {
-    std::env::split_paths(&std::env::var_os("PATH")?).find_map(|dir| {
-        dir.join(name)
-            .canonicalize()
-            .ok()
-            .filter(|found| is_executable(found))
-    })
+    std::env::split_paths(&std::env::var_os("PATH")?)
+        .filter(|dir| dir.is_absolute())
+        .find_map(|dir| {
+            dir.join(name)
+                .canonicalize()
+                .ok()
+                .filter(|found| is_executable(found))
+        })
 }
 
 fn is_executable(path: &Path) -> bool {
