@@ -148,8 +148,8 @@ public func ms_se_sign(
         return fail("you canceled the Touch ID prompt. Run the command again to sign", err, errCap, errLen)
     } catch where authenticationFailure(error) == .systemCanceled {
         return fail(
-            "macOS canceled the Touch ID prompt, for example because the screen is locked. "
-                + "Unlock the Mac and run the command again", err, errCap, errLen)
+            "macOS canceled authentication. If the screen is locked, unlock the Mac. Run the command again",
+            err, errCap, errLen)
     } catch {
         return fail("the Secure Enclave cannot sign: \(error)", err, errCap, errLen)
     }
