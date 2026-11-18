@@ -67,25 +67,26 @@ pub fn sign(key: &PublicKey, namespace: &str, message: &[u8]) -> Result<String> 
         .stderr(Stdio::piped())
         .spawn()
         .context("cannot run ssh-keygen")?;
-    // ssh-keygen can exit before it reads the message. Its exit status then reports the cause.
-    let _ = child
-        .stdin
-        .take()
-        .expect("stdin is piped")
-        .write_all(message);
-    let deadline = Instant::now() + TIMEOUT;
-    while child.try_wait()?.is_none() {
-        if Instant::now() >= deadline {
-            let _ = child.kill();
-            let _ = child.wait();
-            bail!(
-                "the agent did not sign within {} seconds",
-                TIMEOUT.as_secs()
-            );
+    let mut stdin = child.stdin.take().expect("stdin is piped");
+    let output = std::thread::scope(|scope| -> Result<_> {
+        // ssh-keygen reads the message only after the agent answers, so a stalled agent must not
+        // block the timeout. When ssh-keygen exits before it reads the message, its exit status
+        // reports the cause.
+        scope.spawn(move || stdin.write_all(message));
+        let deadline = Instant::now() + TIMEOUT;
+        while child.try_wait()?.is_none() {
+            if Instant::now() >= deadline {
+                let _ = child.kill();
+                let _ = child.wait();
+                bail!(
+                    "the agent did not sign within {} seconds",
+                    TIMEOUT.as_secs()
+                );
+            }
+            std::thread::sleep(Duration::from_millis(10));
         }
-        std::thread::sleep(Duration::from_millis(10));
-    }
-    let output = child.wait_with_output()?;
+        Ok(child.wait_with_output()?)
+    })?;
     if !output.status.success() {
         // The last line holds the cause, for example "Signing (stdin) failed: agent refused operation".
         let stderr = String::from_utf8_lossy(&output.stderr);
