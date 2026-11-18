@@ -205,8 +205,9 @@ fn gitconfig(settings: &[(&str, String)]) -> String {
 /// A failure here leaves the local setup intact, so it prints what to do instead of failing init.
 fn add_to_github(public: &ssh_key::PublicKey, public_path: &Path, title: &str) {
     let manual = format!(
-        "gh ssh-key add '{}' --type signing --title '{title}'",
-        public_path.display()
+        "gh ssh-key add {} --type signing --title {}",
+        shell_quote(&public_path.to_string_lossy()),
+        shell_quote(title)
     );
     if find_on_path(OsStr::new("gh")).is_none() {
         eprintln!("Add the key to GitHub as a signing key:\n  {manual}");
@@ -248,6 +249,11 @@ fn add_to_github(public: &ssh_key::PublicKey, public_path: &Path, title: &str) {
         ),
         Err(err) => eprintln!("cannot run gh: {err}\nAdd the key yourself:\n  {manual}"),
     }
+}
+
+/// Quotes `arg` for a POSIX shell, so a printed command works for a title such as `Kim's YubiKey`.
+fn shell_quote(arg: &str) -> String {
+    format!("'{}'", arg.replace('\'', r"'\''"))
 }
 
 /// The value git runs as gpg.ssh.program: the bare name when PATH finds this executable, else its absolute path.
@@ -323,4 +329,19 @@ fn hostname() -> String {
         .map(|name| name.trim().to_owned())
         .filter(|name| !name.is_empty())
         .unwrap_or_else(|| "this-machine".into())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn printed_gh_command_keeps_quotes_in_the_title() {
+        let title = "Kim's YubiKey via host agent";
+        let out = Command::new("sh")
+            .args(["-c", &format!("printf %s {}", shell_quote(title))])
+            .output()
+            .unwrap();
+        assert_eq!(String::from_utf8(out.stdout).unwrap(), title);
+    }
 }
