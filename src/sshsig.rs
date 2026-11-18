@@ -51,13 +51,12 @@ pub fn run(all_args: &[OsString]) -> Result<()> {
     let namespace = namespace.context("-Y sign needs -n <namespace>")?;
     let key_file = key_file.context("-Y sign needs -f <public key file>")?;
 
-    let requested = PublicKey::read_openssh_file(&key_file).with_context(|| {
-        format!(
-            "cannot read an OpenSSH public key from {}",
-            key_file.display()
-        )
-    })?;
-    let Some(key) = Key::load_existing()?.filter(|key| requested.key_data() == &key.public) else {
+    let machine_key = match PublicKey::read_openssh_file(&key_file) {
+        Ok(requested) => Key::load_existing()?.filter(|key| requested.key_data() == &key.public),
+        // git also accepts a private key file, which ssh-keygen reads. It is never the machine key.
+        Err(_) => None,
+    };
+    let Some(key) = machine_key else {
         return exec_ssh_keygen(all_args);
     };
     let preferred = prefer::load()?;
