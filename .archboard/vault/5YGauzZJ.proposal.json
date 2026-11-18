@@ -293,7 +293,7 @@
         "name": "SSH signature",
         "kind": "module",
         "responsibility": "Build and armor SSHSIG signatures from a hardware ECDSA signature.",
-        "description": "Uses the ssh-key crate to build the SSHSIG signed data (namespace, sha512 message hash) and to armor the result. The hardware signs the SHA-256 digest of the signed data. Also parses the -f public key and refuses a key that is not the hardware key.",
+        "description": "Parses the -Y sign options that git and jj pass. A -f key that is not the machine key goes to ssh-keygen unchanged, so per-repository signing keys keep working. For the machine key, it tries the preferred key first, then builds the SSHSIG with the ssh-key crate (namespace, sha512 message hash) and has the hardware sign the SHA-256 digest of the signed data.",
         "binding": {
           "repo": "machine-signing",
           "path": "src/sshsig.rs"
@@ -307,6 +307,31 @@
       "subject": "QQT2Dxdu#xHWs9u1C",
       "placement": {
         "holder": "QQT2Dxdu"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "QQT2Dxdu#80QXXbuD",
+      "kind": "relationship",
+      "value": {
+        "order": 5,
+        "kind": "call",
+        "label": "sign first",
+        "emphasis": "normal",
+        "anchor": {
+          "repo": "machine-signing",
+          "path": "src/sshsig.rs",
+          "symbol": "sign"
+        },
+        "id": "QQT2Dxdu#80QXXbuD",
+        "to": "QQT2Dxdu#VC8uP45L"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "QQT2Dxdu#80QXXbuD",
+      "placement": {
+        "holder": "QQT2Dxdu#xHWs9u1C"
       }
     },
     {
@@ -336,6 +361,81 @@
     },
     {
       "type": "add",
+      "subject": "QQT2Dxdu#VC8uP45L",
+      "kind": "module",
+      "value": {
+        "order": 25,
+        "name": "Preferred key",
+        "kind": "module",
+        "responsibility": "Sign with an SSH agent key, such as a YubiKey PIV key, when the agent can.",
+        "description": "prefer.pub beside the machine key records the preference. Signing runs ssh-keygen -Y sign -U with a 30-second limit and accepts only a clean exit and a signature by that key. Any failure falls back to the machine key, and a one-line notice goes to /dev/tty, because git hides the stderr of a signing program that succeeds. Through the agent, a cancelled PIN, an unplugged YubiKey and a stale PKCS#11 session look the same, so the preference is best effort.",
+        "binding": {
+          "repo": "machine-signing",
+          "path": "src/prefer.rs"
+        },
+        "schemaVersion": 1,
+        "id": "QQT2Dxdu#VC8uP45L"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "QQT2Dxdu#VC8uP45L",
+      "placement": {
+        "holder": "QQT2Dxdu"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "QQT2Dxdu#NcWG8ADQ",
+      "kind": "relationship",
+      "value": {
+        "order": 10,
+        "kind": "call",
+        "label": "-Y sign -U -f prefer.pub",
+        "emphasis": "normal",
+        "anchor": {
+          "repo": "machine-signing",
+          "path": "src/prefer.rs",
+          "symbol": "sign"
+        },
+        "id": "QQT2Dxdu#NcWG8ADQ",
+        "to": "QQT2Dxdu#kl43IMU6"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "QQT2Dxdu#NcWG8ADQ",
+      "placement": {
+        "holder": "QQT2Dxdu#VC8uP45L"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "QQT2Dxdu#rNs15Xys",
+      "kind": "relationship",
+      "value": {
+        "order": 20,
+        "kind": "call",
+        "label": "key directory, machine key check",
+        "emphasis": "normal",
+        "anchor": {
+          "repo": "machine-signing",
+          "path": "src/prefer.rs",
+          "symbol": "path"
+        },
+        "id": "QQT2Dxdu#rNs15Xys",
+        "to": "QQT2Dxdu#zAFbgXoh"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "QQT2Dxdu#rNs15Xys",
+      "placement": {
+        "holder": "QQT2Dxdu#VC8uP45L"
+      }
+    },
+    {
+      "type": "add",
       "subject": "QQT2Dxdu#RVUq5RTc",
       "kind": "module",
       "value": {
@@ -343,7 +443,7 @@
         "name": "Git setup",
         "kind": "module",
         "responsibility": "Configure global git for SSH signing with the hardware key.",
-        "description": "Writes key.pub beside the key file and prints it. When gh is on PATH, lists the account's signing keys and adds the key with gh ssh-key add --type signing only when GitHub does not have it. A gh failure prints the gh auth refresh command and the manual gh command, and init continues. Then appends the key for user.email to the allowed signers file and sets gpg.format=ssh, gpg.ssh.program, gpg.ssh.allowedSignersFile when unset, user.signingkey=<path to key.pub> and commit.gpgsign=true, printing each changed value. A path, not a key:: literal, keeps git from passing -U. When git cannot write the global configuration, it prints the settings as a configuration block. It does not set tag.gpgsign.",
+        "description": "init [--prefer <key.pub> [--title <name>] | --no-prefer]. Writes key.pub and prints it. When gh is on PATH, adds each key that GitHub lacks as a signing key: the machine key as '<host> TPM' or '<host> Secure Enclave', the preferred key as '<comment> via <host> agent' or the --title value. A gh failure prints the gh auth refresh command and init continues. Appends each key for user.email to the allowed signers file, test-signs with the preferred key and reports the result, then sets gpg.format=ssh, gpg.ssh.program, gpg.ssh.allowedSignersFile when unset, user.signingkey=<path to key.pub> and commit.gpgsign=true. When git cannot write the global configuration, it prints the settings as a configuration block.",
         "binding": {
           "repo": "machine-signing",
           "path": "src/git_setup.rs"
@@ -380,6 +480,31 @@
     {
       "type": "place",
       "subject": "QQT2Dxdu#Ikan0nl2",
+      "placement": {
+        "holder": "QQT2Dxdu#RVUq5RTc"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "QQT2Dxdu#P2TUHJU0",
+      "kind": "relationship",
+      "value": {
+        "order": 15,
+        "kind": "call",
+        "label": "set, clear, test sign",
+        "emphasis": "normal",
+        "anchor": {
+          "repo": "machine-signing",
+          "path": "src/git_setup.rs",
+          "symbol": "init"
+        },
+        "id": "QQT2Dxdu#P2TUHJU0",
+        "to": "QQT2Dxdu#VC8uP45L"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "QQT2Dxdu#P2TUHJU0",
       "placement": {
         "holder": "QQT2Dxdu#RVUq5RTc"
       }
@@ -521,6 +646,46 @@
     },
     {
       "type": "add",
+      "subject": "QQT2Dxdu#QuCktSzq",
+      "kind": "relationship",
+      "value": {
+        "order": 10,
+        "kind": "call",
+        "label": "sign with agent key",
+        "emphasis": "normal",
+        "id": "QQT2Dxdu#QuCktSzq",
+        "to": "QQT2Dxdu#XeKaZ1DF"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "QQT2Dxdu#QuCktSzq",
+      "placement": {
+        "holder": "QQT2Dxdu#kl43IMU6"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "QQT2Dxdu#XeKaZ1DF",
+      "kind": "module",
+      "value": {
+        "order": 65,
+        "name": "SSH agent",
+        "kind": "external",
+        "responsibility": "Hold the preferred key, for example a YubiKey PIV key loaded through PKCS#11.",
+        "schemaVersion": 1,
+        "id": "QQT2Dxdu#XeKaZ1DF"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "QQT2Dxdu#XeKaZ1DF",
+      "placement": {
+        "holder": "QQT2Dxdu"
+      }
+    },
+    {
+      "type": "add",
       "subject": "QQT2Dxdu#d6Z0gUyZ",
       "kind": "module",
       "value": {
@@ -601,6 +766,9 @@
           "QQT2Dxdu#pbzqEcu0",
           "QQT2Dxdu#vEPUHAth",
           "QQT2Dxdu#xHWs9u1C",
+          "QQT2Dxdu#VC8uP45L",
+          "QQT2Dxdu#kl43IMU6",
+          "QQT2Dxdu#XeKaZ1DF",
           "QQT2Dxdu#zAFbgXoh",
           "QQT2Dxdu#PrQ2h8ZS",
           "QQT2Dxdu#d6Z0gUyZ"
@@ -657,7 +825,122 @@
       "subject": "QQT2Dxdu#M1uFLAeI",
       "placement": {
         "holder": "QQT2Dxdu#Y78771AN",
+        "before": "QQT2Dxdu#vPeBLQ4n"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "QQT2Dxdu#vPeBLQ4n",
+      "kind": "step",
+      "value": {
+        "id": "QQT2Dxdu#vPeBLQ4n",
+        "kind": "decision",
+        "question": "Preferred key set?",
+        "alternatives": [
+          "yes",
+          "no"
+        ]
+      }
+    },
+    {
+      "type": "place",
+      "subject": "QQT2Dxdu#vPeBLQ4n",
+      "placement": {
+        "holder": "QQT2Dxdu#Y78771AN",
         "before": "QQT2Dxdu#4XuR93uN"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "QQT2Dxdu#4rLkA0qc",
+      "kind": "step",
+      "value": {
+        "id": "QQT2Dxdu#4rLkA0qc",
+        "from": "QQT2Dxdu#xHWs9u1C",
+        "to": "QQT2Dxdu#VC8uP45L",
+        "label": "sign message",
+        "kind": "sync",
+        "anchor": {
+          "repo": "machine-signing",
+          "path": "src/sshsig.rs",
+          "symbol": "sign"
+        }
+      }
+    },
+    {
+      "type": "place",
+      "subject": "QQT2Dxdu#4rLkA0qc",
+      "placement": {
+        "holder": "QQT2Dxdu#vPeBLQ4n",
+        "alternative": "yes",
+        "before": "QQT2Dxdu#s5H3mSgC"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "QQT2Dxdu#s5H3mSgC",
+      "kind": "step",
+      "value": {
+        "id": "QQT2Dxdu#s5H3mSgC",
+        "from": "QQT2Dxdu#VC8uP45L",
+        "to": "QQT2Dxdu#kl43IMU6",
+        "label": "-Y sign -U -f prefer.pub (stdin)",
+        "kind": "sync",
+        "anchor": {
+          "repo": "machine-signing",
+          "path": "src/prefer.rs",
+          "symbol": "sign"
+        }
+      }
+    },
+    {
+      "type": "place",
+      "subject": "QQT2Dxdu#s5H3mSgC",
+      "placement": {
+        "holder": "QQT2Dxdu#vPeBLQ4n",
+        "alternative": "yes",
+        "before": "QQT2Dxdu#764S6BhQ"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "QQT2Dxdu#764S6BhQ",
+      "kind": "step",
+      "value": {
+        "id": "QQT2Dxdu#764S6BhQ",
+        "from": "QQT2Dxdu#kl43IMU6",
+        "to": "QQT2Dxdu#XeKaZ1DF",
+        "label": "sign with agent key",
+        "kind": "sync"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "QQT2Dxdu#764S6BhQ",
+      "placement": {
+        "holder": "QQT2Dxdu#vPeBLQ4n",
+        "alternative": "yes",
+        "before": "QQT2Dxdu#CvUmlWKC"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "QQT2Dxdu#CvUmlWKC",
+      "kind": "step",
+      "value": {
+        "id": "QQT2Dxdu#CvUmlWKC",
+        "from": "QQT2Dxdu#VC8uP45L",
+        "to": "QQT2Dxdu#xHWs9u1C",
+        "label": "armored SSHSIG, or the failure",
+        "kind": "return"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "QQT2Dxdu#CvUmlWKC",
+      "placement": {
+        "holder": "QQT2Dxdu#vPeBLQ4n",
+        "alternative": "yes"
       }
     },
     {
@@ -670,6 +953,7 @@
         "to": "QQT2Dxdu#zAFbgXoh",
         "label": "sign signed data",
         "kind": "sync",
+        "note": "Only when no preferred key is set or the agent could not sign with it.",
         "anchor": {
           "repo": "machine-signing",
           "path": "src/sshsig.rs",
@@ -915,6 +1199,7 @@
           "QQT2Dxdu#zAFbgXoh",
           "QQT2Dxdu#PrQ2h8ZS",
           "QQT2Dxdu#d6Z0gUyZ",
+          "QQT2Dxdu#VC8uP45L",
           "QQT2Dxdu#pbzqEcu0",
           "QQT2Dxdu#ssSv3TCG"
         ]
@@ -1115,7 +1400,7 @@
       "subject": "QQT2Dxdu#IIqzUuwL",
       "placement": {
         "holder": "QQT2Dxdu#XbTgQ58S",
-        "before": "QQT2Dxdu#FsdLrfUO"
+        "before": "QQT2Dxdu#9BJmIVdz"
       }
     },
     {
@@ -1141,6 +1426,31 @@
       "placement": {
         "holder": "QQT2Dxdu#IIqzUuwL",
         "alternative": "yes"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "QQT2Dxdu#9BJmIVdz",
+      "kind": "step",
+      "value": {
+        "id": "QQT2Dxdu#9BJmIVdz",
+        "from": "QQT2Dxdu#RVUq5RTc",
+        "to": "QQT2Dxdu#VC8uP45L",
+        "label": "set or clear, test sign",
+        "kind": "sync",
+        "anchor": {
+          "repo": "machine-signing",
+          "path": "src/git_setup.rs",
+          "symbol": "init"
+        }
+      }
+    },
+    {
+      "type": "place",
+      "subject": "QQT2Dxdu#9BJmIVdz",
+      "placement": {
+        "holder": "QQT2Dxdu#XbTgQ58S",
+        "before": "QQT2Dxdu#FsdLrfUO"
       }
     },
     {
