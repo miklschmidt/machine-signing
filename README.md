@@ -79,7 +79,8 @@ You can run `init` again at any time. It does not replace the key.
 
 On GitHub, `init` names the machine key `<host> TPM` on Linux, or `<host> Secure Enclave` on macOS.
 On macOS, `<host>` is the local host name from the Sharing settings (`scutil --get LocalHostName`).
-On Linux, it is the first part of `uname -n`.
+On Linux, `<host>` is the part of `uname -n` before the first dot.
+If macOS cannot read `LocalHostName`, it uses the same fallback.
 
 ## Ask for Touch ID on macOS
 

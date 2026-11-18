@@ -384,10 +384,14 @@ fn hostname() -> String {
             .filter(|out| out.status.success())
             .and_then(|out| String::from_utf8(out.stdout).ok())
     };
-    cfg!(target_os = "macos")
-        .then(|| output("scutil", &["--get", "LocalHostName"]))
-        .flatten()
-        .or_else(|| output("uname", &["-n"]))
+    if cfg!(target_os = "macos")
+        && let Some(name) = output("/usr/sbin/scutil", &["--get", "LocalHostName"])
+            .map(|name| name.trim().to_owned())
+            .filter(|name| !name.is_empty())
+    {
+        return name;
+    }
+    output("uname", &["-n"])
         .and_then(|name| name.trim().split('.').next().map(str::to_owned))
         .filter(|name| !name.is_empty())
         .unwrap_or_else(|| "this-machine".into())
