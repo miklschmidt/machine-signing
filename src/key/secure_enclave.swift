@@ -32,6 +32,7 @@ private func load(
 private enum AuthenticationFailure {
     case notInteractive
     case userCanceled
+    case systemCanceled
 }
 
 private func authenticationFailure(_ error: Error) -> AuthenticationFailure? {
@@ -45,6 +46,8 @@ private func authenticationFailure(_ error: Error) -> AuthenticationFailure? {
              (NSOSStatusErrorDomain, Int(errSecUserCanceled)),
              (TKErrorDomain, TKError.canceledByUser.rawValue):
             return .userCanceled
+        case (LAErrorDomain, LAError.systemCancel.rawValue):
+            return .systemCanceled
         default:
             next = error.userInfo[NSUnderlyingErrorKey] as? NSError
         }
@@ -143,6 +146,10 @@ public func ms_se_sign(
             err, errCap, errLen)
     } catch where authenticationFailure(error) == .userCanceled {
         return fail("you canceled the Touch ID prompt. Run the command again to sign", err, errCap, errLen)
+    } catch where authenticationFailure(error) == .systemCanceled {
+        return fail(
+            "macOS canceled the Touch ID prompt, for example because the screen is locked. "
+                + "Unlock the Mac and run the command again", err, errCap, errLen)
     } catch {
         return fail("the Secure Enclave cannot sign: \(error)", err, errCap, errLen)
     }
