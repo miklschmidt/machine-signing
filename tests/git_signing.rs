@@ -6,6 +6,7 @@ use std::ffi::{OsStr, OsString};
 use std::net::{TcpListener, TcpStream};
 use std::path::PathBuf;
 use std::process::{Child, Command, Output};
+use std::sync::{Mutex, PoisonError};
 use std::time::{Duration, Instant};
 
 struct Killed(Child);
@@ -16,6 +17,9 @@ impl Drop for Killed {
         let _ = self.0.wait();
     }
 }
+
+/// Held from the choice of ports until swtpm listens on them, so parallel tests never pick the same ports.
+static SWTPM_START: Mutex<()> = Mutex::new(());
 
 /// A free port whose successor is also free: the swtpm TCTI expects the control port at port + 1.
 fn free_port_pair() -> u16 {
@@ -68,6 +72,7 @@ impl Machine {
         let tmp = tempfile::tempdir().unwrap();
         let state = tmp.path().join("tpm");
         std::fs::create_dir(&state).unwrap();
+        let starting = SWTPM_START.lock().unwrap_or_else(PoisonError::into_inner);
         let port = free_port_pair();
         let swtpm = Killed(
             Command::new("swtpm")
@@ -80,6 +85,7 @@ impl Machine {
                 .expect("swtpm must be on PATH: run the tests in `nix develop`"),
         );
         wait_for("swtpm", || TcpStream::connect(("127.0.0.1", port)).is_ok());
+        drop(starting);
 
         // A fake gh before the real one on PATH: it lists the keys it was given, and logs each add.
         let bin = tmp.path().join("bin");
@@ -189,13 +195,16 @@ fn signs_commits_that_git_verifies() {
         "{report}"
     );
 
-    // A request for another key goes to ssh-keygen, which signs with that key's private key file.
+    // A request for another key goes to ssh-keygen unchanged. git allows user.signingkey to name
+    // the public key file or the private key file.
     let (other, _) = machine.ssh_key("other");
     let message = machine.home.join("message");
     std::fs::write(&message, "data").unwrap();
-    let mut sign = machine.tool(&["-Y", "sign", "-n", "git", "-f"]);
-    run(sign.arg(other.with_extension("pub")).arg(&message));
-    assert!(machine.home.join("message.sig").exists());
+    for key in [other.with_extension("pub"), other] {
+        let mut sign = machine.tool(&["-Y", "sign", "-n", "git", "-f"]);
+        run(sign.arg(key).arg(&message));
+        std::fs::remove_file(machine.home.join("message.sig")).unwrap();
+    }
 }
 
 #[test]
