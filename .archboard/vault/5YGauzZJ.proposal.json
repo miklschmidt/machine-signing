@@ -20,7 +20,7 @@
         "responsibility": "Store the hardware-wrapped key blob and call the platform backend.",
         "description": "Key::load_or_create creates the key only when no key file exists. The key file is the only state; key.pub beside it is derived by init.",
         "binding": {
-          "repo": "machine-signing",
+          "repo": "github.com/miklschmidt/machine-signing",
           "path": "src/key/mod.rs"
         },
         "schemaVersion": 1,
@@ -41,10 +41,10 @@
       "value": {
         "order": 10,
         "kind": "call",
-        "label": "generate, public_key, sign",
+        "label": "generate, needs_touch_id, public_key, sign",
         "emphasis": "normal",
         "anchor": {
-          "repo": "machine-signing",
+          "repo": "github.com/miklschmidt/machine-signing",
           "path": "src/key/mod.rs",
           "symbol": "Key::sign"
         },
@@ -66,10 +66,10 @@
       "value": {
         "order": 20,
         "kind": "call",
-        "label": "generate, public_key, sign",
+        "label": "generate, needs_touch_id, public_key, sign",
         "emphasis": "normal",
         "anchor": {
-          "repo": "machine-signing",
+          "repo": "github.com/miklschmidt/machine-signing",
           "path": "src/key/mod.rs",
           "symbol": "Key::sign"
         },
@@ -95,7 +95,7 @@
         "responsibility": "Create and use an ECDSA P-256 child key under the owner storage primary.",
         "description": "Uses tss-esapi. Recreates the deterministic ECC P-256 storage primary on each use, loads the saved public and private blobs, and signs an external digest with a null hashcheck ticket. The key is fixedTPM, fixedParent, userWithAuth and noDA, with an empty auth value. No persistent handles.",
         "binding": {
-          "repo": "machine-signing",
+          "repo": "github.com/miklschmidt/machine-signing",
           "path": "src/key/tpm.rs"
         },
         "schemaVersion": 1,
@@ -119,7 +119,7 @@
         "label": "CreatePrimary, Load, Sign",
         "emphasis": "normal",
         "anchor": {
-          "repo": "machine-signing",
+          "repo": "github.com/miklschmidt/machine-signing",
           "path": "src/key/tpm.rs",
           "symbol": "sign"
         },
@@ -145,7 +145,7 @@
         "responsibility": "Route `init`, `-Y sign` and every other ssh-keygen mode.",
         "description": "One binary that git runs as gpg.ssh.program. `-Y sign` signs with the hardware key. Every other `-Y` mode execs the real ssh-keygen with the same arguments, so verification keeps working. `init` creates the key and configures git. There is no daemon or agent.",
         "binding": {
-          "repo": "machine-signing",
+          "repo": "github.com/miklschmidt/machine-signing",
           "path": "src/main.rs"
         },
         "schemaVersion": 1,
@@ -169,7 +169,7 @@
         "label": "sign buffer",
         "emphasis": "normal",
         "anchor": {
-          "repo": "machine-signing",
+          "repo": "github.com/miklschmidt/machine-signing",
           "path": "src/main.rs",
           "symbol": "main"
         },
@@ -194,7 +194,7 @@
         "label": "configure git",
         "emphasis": "normal",
         "anchor": {
-          "repo": "machine-signing",
+          "repo": "github.com/miklschmidt/machine-signing",
           "path": "src/main.rs",
           "symbol": "main"
         },
@@ -219,7 +219,7 @@
         "label": "exec other -Y modes",
         "emphasis": "normal",
         "anchor": {
-          "repo": "machine-signing",
+          "repo": "github.com/miklschmidt/machine-signing",
           "path": "src/main.rs",
           "symbol": "main"
         },
@@ -243,9 +243,9 @@
         "name": "Secure Enclave backend",
         "kind": "module",
         "responsibility": "Create and use a Secure Enclave P-256 signing key through CryptoKit.",
-        "description": "secure_enclave.swift exports three @_cdecl functions (generate, public key, sign) that build.rs compiles with swiftc into a static library. The Rust side calls them through FFI. It stores the CryptoKit dataRepresentation blob, because keychain storage of Secure Enclave keys needs entitlements that an unsigned CLI does not have. No user presence in v1.",
+        "description": "secure_enclave.swift exports @_cdecl functions (generate, public key, needs user presence, sign) that build.rs compiles with swiftc into a static library. The Rust side calls them through FFI. It stores the CryptoKit dataRepresentation blob, because keychain storage of Secure Enclave keys needs entitlements that an unsigned CLI does not have. With init --touch-id, the key is created with the userPresence access control, so each signature needs Touch ID or the login password. This is fixed at creation. The probe signs a test message with an LAContext that does not allow interaction: a not-interactive error means that the key needs user presence, and no prompt appears. Signing sets the prompt reason and maps a session without a prompt and a canceled prompt to clear errors.",
         "binding": {
-          "repo": "machine-signing",
+          "repo": "github.com/miklschmidt/machine-signing",
           "path": "src/key/secure_enclave.rs"
         },
         "schemaVersion": 1,
@@ -269,7 +269,7 @@
         "label": "CryptoKit",
         "emphasis": "normal",
         "anchor": {
-          "repo": "machine-signing",
+          "repo": "github.com/miklschmidt/machine-signing",
           "path": "src/key/secure_enclave.swift",
           "symbol": "ms_se_sign"
         },
@@ -293,9 +293,9 @@
         "name": "SSH signature",
         "kind": "module",
         "responsibility": "Build and armor SSHSIG signatures from a hardware ECDSA signature.",
-        "description": "Parses the -Y sign options that git and jj pass. A -f key that is not the machine key goes to ssh-keygen unchanged, so per-repository signing keys keep working. For the machine key, it tries the preferred key first, then builds the SSHSIG with the ssh-key crate (namespace, sha512 message hash) and has the hardware sign the SHA-256 digest of the signed data.",
+        "description": "Parses the -Y sign options that git and jj pass. Routing compares the -f key with key.pub, which init wrote, and never reads the key file, so an unusable machine key never blocks another key. A -f key that is not the machine key, including a private key file, goes to ssh-keygen unchanged, so per-repository signing keys keep working. For the machine key, it tries the preferred key first, then builds the SSHSIG with the ssh-key crate (namespace, sha512 message hash) and has the hardware sign the SHA-256 digest of the signed data.",
         "binding": {
-          "repo": "machine-signing",
+          "repo": "github.com/miklschmidt/machine-signing",
           "path": "src/sshsig.rs"
         },
         "schemaVersion": 1,
@@ -319,7 +319,7 @@
         "label": "sign first",
         "emphasis": "normal",
         "anchor": {
-          "repo": "machine-signing",
+          "repo": "github.com/miklschmidt/machine-signing",
           "path": "src/sshsig.rs",
           "symbol": "sign"
         },
@@ -344,7 +344,7 @@
         "label": "public key, sign",
         "emphasis": "normal",
         "anchor": {
-          "repo": "machine-signing",
+          "repo": "github.com/miklschmidt/machine-signing",
           "path": "src/sshsig.rs",
           "symbol": "sign"
         },
@@ -370,7 +370,7 @@
         "responsibility": "Sign with an SSH agent key, such as a YubiKey PIV key, when the agent can.",
         "description": "prefer.pub beside the machine key records the preference. Signing runs ssh-keygen -Y sign -U with a 30-second limit and accepts only a clean exit and a signature by that key. Any failure falls back to the machine key, and a one-line notice goes to /dev/tty, because git hides the stderr of a signing program that succeeds. Through the agent, a cancelled PIN, an unplugged YubiKey and a stale PKCS#11 session look the same, so the preference is best effort.",
         "binding": {
-          "repo": "machine-signing",
+          "repo": "github.com/miklschmidt/machine-signing",
           "path": "src/prefer.rs"
         },
         "schemaVersion": 1,
@@ -394,7 +394,7 @@
         "label": "-Y sign -U -f prefer.pub",
         "emphasis": "normal",
         "anchor": {
-          "repo": "machine-signing",
+          "repo": "github.com/miklschmidt/machine-signing",
           "path": "src/prefer.rs",
           "symbol": "sign"
         },
@@ -419,7 +419,7 @@
         "label": "key directory, machine key check",
         "emphasis": "normal",
         "anchor": {
-          "repo": "machine-signing",
+          "repo": "github.com/miklschmidt/machine-signing",
           "path": "src/prefer.rs",
           "symbol": "path"
         },
@@ -443,9 +443,9 @@
         "name": "Git setup",
         "kind": "module",
         "responsibility": "Configure global git for SSH signing with the hardware key.",
-        "description": "init [--prefer <key.pub> [--title <name>] | --no-prefer]. Writes key.pub and prints it. When gh is on PATH, adds each key that GitHub lacks as a signing key: the machine key as '<host> TPM' or '<host> Secure Enclave', the preferred key as '<comment> via <host> agent' or the --title value. A gh failure prints the gh auth refresh command and init continues. Appends each key for user.email to the allowed signers file, test-signs with the preferred key and reports the result, then sets gpg.format=ssh, gpg.ssh.program, gpg.ssh.allowedSignersFile when unset, user.signingkey=<path to key.pub> and commit.gpgsign=true. When git cannot write the global configuration, it prints the settings as a configuration block.",
+        "description": "init [--touch-id] [--prefer <key.pub> [--title <name>] | --no-prefer]. --touch-id fails on Linux before any change. On macOS it makes a new key that needs Touch ID, and refuses an existing key that does not need it, with the steps to replace it. init reports whether the key needs Touch ID. Writes key.pub and prints it. When gh is on PATH, adds each key that GitHub lacks as a signing key: the machine key as '<host> TPM' or '<host> Secure Enclave', the preferred key as '<comment> via <host> agent' or the --title value. <host> is scutil --get LocalHostName on macOS, else the first part of uname -n. A gh failure prints the gh auth refresh command and init continues. Appends each key for user.email to the allowed signers file, test-signs with the preferred key and reports the result, then sets gpg.format=ssh, gpg.ssh.program, gpg.ssh.allowedSignersFile when unset, user.signingkey=<path to key.pub> and commit.gpgsign=true. When git cannot write the global configuration, it prints the settings as a configuration block.",
         "binding": {
-          "repo": "machine-signing",
+          "repo": "github.com/miklschmidt/machine-signing",
           "path": "src/git_setup.rs"
         },
         "schemaVersion": 1,
@@ -469,7 +469,7 @@
         "label": "create or load key",
         "emphasis": "normal",
         "anchor": {
-          "repo": "machine-signing",
+          "repo": "github.com/miklschmidt/machine-signing",
           "path": "src/git_setup.rs",
           "symbol": "init"
         },
@@ -494,7 +494,7 @@
         "label": "set, clear, test sign",
         "emphasis": "normal",
         "anchor": {
-          "repo": "machine-signing",
+          "repo": "github.com/miklschmidt/machine-signing",
           "path": "src/git_setup.rs",
           "symbol": "init"
         },
@@ -519,7 +519,7 @@
         "label": "git config --global",
         "emphasis": "normal",
         "anchor": {
-          "repo": "machine-signing",
+          "repo": "github.com/miklschmidt/machine-signing",
           "path": "src/git_setup.rs",
           "symbol": "set"
         },
@@ -544,7 +544,7 @@
         "label": "gh api, gh ssh-key add",
         "emphasis": "normal",
         "anchor": {
-          "repo": "machine-signing",
+          "repo": "github.com/miklschmidt/machine-signing",
           "path": "src/git_setup.rs",
           "symbol": "add_to_github"
         },
@@ -570,7 +570,7 @@
         "responsibility": "Create, store and use the one machine key through the platform backend.",
         "description": "Stores the hardware-wrapped key blob in the user data directory and selects the backend at compile time: TPM on Linux, Secure Enclave on macOS. The blob is useless on another machine.",
         "binding": {
-          "repo": "machine-signing",
+          "repo": "github.com/miklschmidt/machine-signing",
           "path": "src/key/"
         },
         "schemaVersion": 1,
@@ -814,7 +814,7 @@
         "label": "sign buffer for -f key",
         "kind": "sync",
         "anchor": {
-          "repo": "machine-signing",
+          "repo": "github.com/miklschmidt/machine-signing",
           "path": "src/main.rs",
           "symbol": "main"
         }
@@ -861,7 +861,7 @@
         "label": "sign message",
         "kind": "sync",
         "anchor": {
-          "repo": "machine-signing",
+          "repo": "github.com/miklschmidt/machine-signing",
           "path": "src/sshsig.rs",
           "symbol": "sign"
         }
@@ -887,7 +887,7 @@
         "label": "-Y sign -U -f prefer.pub (stdin)",
         "kind": "sync",
         "anchor": {
-          "repo": "machine-signing",
+          "repo": "github.com/miklschmidt/machine-signing",
           "path": "src/prefer.rs",
           "symbol": "sign"
         }
@@ -955,7 +955,7 @@
         "kind": "sync",
         "note": "Only when no preferred key is set or the agent could not sign with it.",
         "anchor": {
-          "repo": "machine-signing",
+          "repo": "github.com/miklschmidt/machine-signing",
           "path": "src/sshsig.rs",
           "symbol": "sign"
         }
@@ -980,7 +980,7 @@
         "label": "sign SHA-256 digest",
         "kind": "sync",
         "anchor": {
-          "repo": "machine-signing",
+          "repo": "github.com/miklschmidt/machine-signing",
           "path": "src/key/mod.rs",
           "symbol": "Key::sign"
         }
@@ -1005,7 +1005,7 @@
         "label": "CreatePrimary, Load, Sign",
         "kind": "sync",
         "anchor": {
-          "repo": "machine-signing",
+          "repo": "github.com/miklschmidt/machine-signing",
           "path": "src/key/tpm.rs",
           "symbol": "sign"
         }
@@ -1152,7 +1152,7 @@
         "label": "exec with the same arguments",
         "kind": "sync",
         "anchor": {
-          "repo": "machine-signing",
+          "repo": "github.com/miklschmidt/machine-signing",
           "path": "src/main.rs",
           "symbol": "main"
         }
@@ -1223,7 +1223,7 @@
         "label": "init",
         "kind": "sync",
         "anchor": {
-          "repo": "machine-signing",
+          "repo": "github.com/miklschmidt/machine-signing",
           "path": "src/main.rs",
           "symbol": "main"
         }
@@ -1248,7 +1248,7 @@
         "label": "load_or_create",
         "kind": "sync",
         "anchor": {
-          "repo": "machine-signing",
+          "repo": "github.com/miklschmidt/machine-signing",
           "path": "src/git_setup.rs",
           "symbol": "init"
         }
@@ -1295,7 +1295,7 @@
         "label": "generate",
         "kind": "sync",
         "anchor": {
-          "repo": "machine-signing",
+          "repo": "github.com/miklschmidt/machine-signing",
           "path": "src/key/mod.rs",
           "symbol": "Key::load_or_create"
         }
@@ -1321,7 +1321,7 @@
         "label": "CreatePrimary, Create",
         "kind": "sync",
         "anchor": {
-          "repo": "machine-signing",
+          "repo": "github.com/miklschmidt/machine-signing",
           "path": "src/key/tpm.rs",
           "symbol": "generate"
         }
@@ -1367,7 +1367,7 @@
         "label": "public_key(blob)",
         "kind": "sync",
         "anchor": {
-          "repo": "machine-signing",
+          "repo": "github.com/miklschmidt/machine-signing",
           "path": "src/key/mod.rs",
           "symbol": "Key::load"
         }
@@ -1414,7 +1414,7 @@
         "label": "gh ssh-key add --type signing",
         "kind": "sync",
         "anchor": {
-          "repo": "machine-signing",
+          "repo": "github.com/miklschmidt/machine-signing",
           "path": "src/git_setup.rs",
           "symbol": "add_to_github"
         }
@@ -1439,7 +1439,7 @@
         "label": "set or clear, test sign",
         "kind": "sync",
         "anchor": {
-          "repo": "machine-signing",
+          "repo": "github.com/miklschmidt/machine-signing",
           "path": "src/git_setup.rs",
           "symbol": "init"
         }
@@ -1465,7 +1465,7 @@
         "kind": "sync",
         "note": "If git cannot write the global configuration, for example a home-manager file, init prints the configuration block and exits with status 1.",
         "anchor": {
-          "repo": "machine-signing",
+          "repo": "github.com/miklschmidt/machine-signing",
           "path": "src/git_setup.rs",
           "symbol": "set"
         }
