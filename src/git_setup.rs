@@ -338,13 +338,14 @@ fn git(args: &[&str]) -> Result<()> {
     Ok(())
 }
 
+/// The short host name. `uname -n` exists on every Linux and macOS, unlike `hostname -s`.
 fn hostname() -> String {
-    Command::new("hostname")
-        .arg("-s")
+    Command::new("uname")
+        .arg("-n")
         .output()
         .ok()
         .and_then(|out| String::from_utf8(out.stdout).ok())
-        .map(|name| name.trim().to_owned())
+        .and_then(|name| name.trim().split('.').next().map(str::to_owned))
         .filter(|name| !name.is_empty())
         .unwrap_or_else(|| "this-machine".into())
 }
