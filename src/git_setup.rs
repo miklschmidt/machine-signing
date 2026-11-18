@@ -168,23 +168,40 @@ fn add_allowed_signer(public: &ssh_key::PublicKey) -> Result<Option<String>> {
     let mut key = public.clone();
     key.set_comment("");
     let entry = format!("{email} namespaces=\"git\" {}", key.to_openssh()?);
-    let existing = std::fs::read_to_string(&path).unwrap_or_default();
-    if existing.lines().any(|line| line.trim() == entry) {
-        eprintln!("{} already allows this key for {email}", path.display());
-        return Ok(setting);
+    match append_line(&path, &entry) {
+        Ok(true) => eprintln!("{}: allowed this key for {email}", path.display()),
+        Ok(false) => eprintln!("{} already allows this key for {email}", path.display()),
+        Err(err) => {
+            eprintln!(
+                "\nAdd this line to {} and run init again:\n  {entry}",
+                path.display()
+            );
+            return Err(err).with_context(|| format!("cannot update {}", path.display()));
+        }
+    }
+    Ok(setting)
+}
+
+/// Appends `line` to the file unless the file has it already. Returns whether it appended.
+fn append_line(path: &Path, line: &str) -> std::io::Result<bool> {
+    let existing = match std::fs::read_to_string(path) {
+        Ok(text) => text,
+        Err(err) if err.kind() == std::io::ErrorKind::NotFound => String::new(),
+        Err(err) => return Err(err),
+    };
+    if existing.lines().any(|existing| existing.trim() == line) {
+        return Ok(false);
     }
     if let Some(dir) = path.parent() {
-        std::fs::create_dir_all(dir).with_context(|| format!("cannot create {}", dir.display()))?;
+        std::fs::create_dir_all(dir)?;
     }
     let separator = if existing.is_empty() || existing.ends_with('\n') {
         ""
     } else {
         "\n"
     };
-    std::fs::write(&path, format!("{existing}{separator}{entry}\n"))
-        .with_context(|| format!("cannot write {}", path.display()))?;
-    eprintln!("{}: allowed this key for {email}", path.display());
-    Ok(setting)
+    std::fs::write(path, format!("{existing}{separator}{line}\n"))?;
+    Ok(true)
 }
 
 /// Renders settings as git configuration file text, for configurations that git cannot write.
@@ -364,5 +381,16 @@ mod tests {
                 .unwrap();
             assert_eq!(String::from_utf8(out.stdout).unwrap().trim_end(), value);
         }
+    }
+
+    #[test]
+    fn allowed_signers_file_that_cannot_be_read_is_left_alone() {
+        let file = tempfile::NamedTempFile::new().unwrap();
+        std::fs::write(file.path(), b"caf\xe9@example.com ssh-ed25519 AAAA\n").unwrap();
+        assert!(append_line(file.path(), "me@example.com namespaces=\"git\" key").is_err());
+        assert_eq!(
+            std::fs::read(file.path()).unwrap(),
+            b"caf\xe9@example.com ssh-ed25519 AAAA\n"
+        );
     }
 }
