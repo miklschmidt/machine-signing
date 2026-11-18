@@ -96,6 +96,7 @@ For example, the agent cannot sign with a YubiKey that is not connected.
 It reports whether the agent can sign with the key now.
 It also adds the key to GitHub and to the allowed signers file, the same as the machine key.
 On GitHub, the key is named `<key comment> via <host> agent`.
+If the key has no comment, the name starts with the key fingerprint instead.
 To use another name, add `--title <name>` to the `init --prefer` command.
 
 When the machine key signs instead of the preferred key, machine-signing writes one line to your terminal with the cause.
