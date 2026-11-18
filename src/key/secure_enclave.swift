@@ -139,10 +139,10 @@ public func ms_se_sign(
     } catch where authenticationFailure(error) == .notInteractive {
         return fail(
             "the key needs Touch ID or your password, and this session cannot show the prompt, "
-                + "for example because it is an SSH session", err, errCap, errLen)
+                + "for example because it is an SSH session. Sign from a terminal on the Mac itself",
+            err, errCap, errLen)
     } catch where authenticationFailure(error) == .userCanceled {
-        return fail("You canceled the authentication prompt. Retry the Git command and complete the prompt.",
-                    err, errCap, errLen)
+        return fail("you canceled the Touch ID prompt. Run the command again to sign", err, errCap, errLen)
     } catch {
         return fail("the Secure Enclave cannot sign: \(error)", err, errCap, errLen)
     }

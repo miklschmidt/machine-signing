@@ -84,7 +84,9 @@ impl Key {
 
     /// Whether each signature needs Touch ID or the password. This never shows a prompt.
     pub fn needs_touch_id(&self) -> Result<bool> {
-        backend::needs_touch_id(&self.blob)
+        backend::needs_touch_id(&self.blob).context(
+            "cannot tell whether the machine key needs Touch ID. Run the same command again",
+        )
     }
 
     pub fn sign(&self, data: &[u8]) -> Result<p256::ecdsa::Signature> {
