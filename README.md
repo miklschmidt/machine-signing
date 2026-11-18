@@ -15,9 +15,9 @@ Each [release](https://github.com/miklschmidt/machine-signing/releases) has a bi
 
 | Platform | Archive |
 | --- | --- |
-| Linux x86_64 | `machine-signing-<version>-x86_64-unknown-linux-gnu.tar.gz` |
-| Linux arm64 | `machine-signing-<version>-aarch64-unknown-linux-gnu.tar.gz` |
-| macOS on Apple silicon | `machine-signing-<version>-aarch64-apple-darwin.tar.gz` |
+| Linux x86_64 | `machine-signing-v<version>-x86_64-unknown-linux-gnu.tar.gz` |
+| Linux arm64 | `machine-signing-v<version>-aarch64-unknown-linux-gnu.tar.gz` |
+| macOS on Apple silicon | `machine-signing-v<version>-aarch64-apple-darwin.tar.gz` |
 
 Put `machine-signing` from the archive in a directory on your PATH.
 The Linux binaries need the tpm2-tss libraries. On Debian and Ubuntu, `sudo apt install libtss2-dev` installs all of them.
