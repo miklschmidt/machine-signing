@@ -15,7 +15,9 @@ compile_error!("machine-signing supports Linux with a TPM 2.0 and macOS on Apple
 
 use anyhow::{Context, Result};
 use ssh_key::public::{EcdsaPublicKey, KeyData};
-use std::path::PathBuf;
+use std::io::Write as _;
+use std::os::unix::fs::OpenOptionsExt as _;
+use std::path::{Path, PathBuf};
 
 /// The name of the hardware that holds the key, for messages.
 pub const HARDWARE: &str = if cfg!(target_os = "linux") {
@@ -72,9 +74,7 @@ impl Key {
             return Ok(Loaded::Existing(Self::load()?));
         }
         let blob = backend::generate()?;
-        let dir = path.parent().expect("the key path has a parent");
-        std::fs::create_dir_all(dir).with_context(|| format!("cannot create {}", dir.display()))?;
-        std::fs::write(&path, &blob).with_context(|| format!("cannot write {}", path.display()))?;
+        write_key_file(&path, &blob)?;
         Ok(Loaded::Created(Self::from_blob(blob)?))
     }
 
@@ -85,5 +85,38 @@ impl Key {
 
     pub fn sign(&self, data: &[u8]) -> Result<p256::ecdsa::Signature> {
         backend::sign(&self.blob, data)
+    }
+}
+
+/// Writes a new key file that only the user can read: on this machine, whoever reads the blob can
+/// sign with the key. A failed write removes the file, so it never holds a partial blob.
+fn write_key_file(path: &Path, blob: &[u8]) -> Result<()> {
+    let dir = path.parent().expect("the key path has a parent");
+    std::fs::create_dir_all(dir).with_context(|| format!("cannot create {}", dir.display()))?;
+    let written = std::fs::OpenOptions::new()
+        .write(true)
+        .create_new(true)
+        .mode(0o600)
+        .open(path)
+        .and_then(|mut file| {
+            file.write_all(blob).inspect_err(|_| {
+                let _ = std::fs::remove_file(path);
+            })
+        });
+    written.with_context(|| format!("cannot write {}", path.display()))
+}
+
+#[cfg(test)]
+mod tests {
+    use std::os::unix::fs::PermissionsExt as _;
+
+    #[test]
+    fn only_the_user_can_read_the_key_file() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("machine-signing").join("key");
+        super::write_key_file(&path, b"blob").unwrap();
+        assert_eq!(std::fs::read(&path).unwrap(), b"blob");
+        let mode = std::fs::metadata(&path).unwrap().permissions().mode();
+        assert_eq!(mode & 0o777, 0o600);
     }
 }
