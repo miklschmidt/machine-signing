@@ -64,20 +64,21 @@ pub fn init(args: &[OsString]) -> Result<()> {
         touch_id,
         preference,
     } = parse(args)?;
-    let key = match Key::load_or_create(touch_id)? {
+    let (key, needs_touch_id) = match Key::load_or_create(touch_id)? {
         Loaded::Created(key) => {
             eprintln!("Created a new {HARDWARE} key: {}", Key::path()?.display());
-            key
+            (key, touch_id)
         }
         Loaded::Existing(key) => {
             eprintln!(
                 "Using the existing {HARDWARE} key: {}",
                 Key::path()?.display()
             );
-            key
+            let needs_touch_id = key.needs_touch_id()?;
+            (key, needs_touch_id)
         }
     };
-    if key.needs_touch_id()? {
+    if needs_touch_id {
         eprintln!("The key needs Touch ID or your password for each signature.");
     } else if touch_id {
         let path = Key::path()?;
