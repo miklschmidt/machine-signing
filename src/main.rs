@@ -13,8 +13,9 @@ use std::process::ExitCode;
 
 const USAGE: &str = "\
 Usage:
-  machine-signing init [--prefer <public key file> [--title <GitHub title>] | --no-prefer]
+  machine-signing init [--touch-id] [--prefer <public key file> [--title <GitHub title>] | --no-prefer]
       Create the machine key if it does not exist, and configure global git to sign commits with it.
+      --touch-id makes a new Secure Enclave key that needs Touch ID or your password to sign.
       --prefer signs with that SSH agent key, such as a YubiKey key, whenever the agent can.
       Otherwise the machine key signs. --title names the preferred key on GitHub.
       --no-prefer removes the preference.

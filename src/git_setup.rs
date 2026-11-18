@@ -9,7 +9,7 @@ use std::process::Command;
 
 const DEFAULT_ALLOWED_SIGNERS: &str = "~/.config/git/allowed_signers";
 
-const USAGE: &str = "usage: machine-signing init [--prefer <public key file> [--title <GitHub title>] | --no-prefer]";
+const USAGE: &str = "usage: machine-signing init [--touch-id] [--prefer <public key file> [--title <GitHub title>] | --no-prefer]";
 
 enum Preference {
     Keep,
@@ -20,8 +20,14 @@ enum Preference {
     Clear,
 }
 
-fn parse(args: &[OsString]) -> Result<Preference> {
-    let (mut file, mut title, mut clear) = (None, None, false);
+struct Options {
+    /// A new key needs Touch ID for each signature, and an existing key must already need it.
+    touch_id: bool,
+    preference: Preference,
+}
+
+fn parse(args: &[OsString]) -> Result<Options> {
+    let (mut file, mut title, mut clear, mut touch_id) = (None, None, false, false);
     let mut args = args.iter();
     while let Some(arg) = args.next() {
         let mut value = |flag: &str| args.next().with_context(|| format!("{flag} needs a value"));
@@ -29,10 +35,16 @@ fn parse(args: &[OsString]) -> Result<Preference> {
             Some("--prefer") => file = Some(PathBuf::from(value("--prefer")?)),
             Some("--title") => title = Some(value("--title")?.to_string_lossy().into_owned()),
             Some("--no-prefer") => clear = true,
+            Some("--touch-id") => touch_id = true,
             _ => bail!("{USAGE}"),
         }
     }
-    Ok(match (file, title, clear) {
+    if touch_id && cfg!(target_os = "linux") {
+        bail!(
+            "--touch-id needs the Secure Enclave of a Mac. A {HARDWARE} key cannot ask for Touch ID"
+        );
+    }
+    let preference = match (file, title, clear) {
         (None, None, false) => Preference::Keep,
         (Some(file), title, false) => Preference::Set { file, title },
         (None, None, true) => Preference::Clear,
@@ -40,12 +52,19 @@ fn parse(args: &[OsString]) -> Result<Preference> {
             bail!("--title names the preferred key on GitHub, so it needs --prefer")
         }
         _ => bail!("{USAGE}"),
+    };
+    Ok(Options {
+        touch_id,
+        preference,
     })
 }
 
 pub fn init(args: &[OsString]) -> Result<()> {
-    let preference = parse(args)?;
-    let key = match Key::load_or_create()? {
+    let Options {
+        touch_id,
+        preference,
+    } = parse(args)?;
+    let key = match Key::load_or_create(touch_id)? {
         Loaded::Created(key) => {
             eprintln!("Created a new {HARDWARE} key: {}", Key::path()?.display());
             key
@@ -58,6 +77,18 @@ pub fn init(args: &[OsString]) -> Result<()> {
             key
         }
     };
+    if key.needs_touch_id()? {
+        eprintln!("The key needs Touch ID or your password for each signature.");
+    } else if touch_id {
+        let path = Key::path()?;
+        bail!(
+            "the existing key {} does not need Touch ID, and a key cannot change this after it is \
+             created. To make a new key that needs Touch ID, delete {} and run \
+             `machine-signing init --touch-id`. Then remove the old key from GitHub",
+            path.display(),
+            path.display()
+        );
+    }
     let host = hostname();
     let public = ssh_key::PublicKey::new(key.public.clone(), format!("machine-signing@{host}"));
     let public_line = public.to_openssh()?;
@@ -365,6 +396,16 @@ mod tests {
             .output()
             .unwrap();
         assert_eq!(String::from_utf8(out.stdout).unwrap(), title);
+    }
+
+    #[test]
+    #[cfg(target_os = "linux")]
+    fn touch_id_is_refused_on_linux_before_any_change() {
+        let err = parse(&["--touch-id".into()]).err().unwrap();
+        assert!(
+            err.to_string().contains("needs the Secure Enclave"),
+            "{err}"
+        );
     }
 
     #[test]

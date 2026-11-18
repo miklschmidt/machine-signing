@@ -1,6 +1,6 @@
 //! Secure Enclave backend (macOS on Apple silicon).
 //!
-//! CryptoKit has no C API, so `secure_enclave.swift` exports three C functions that build.rs links in.
+//! CryptoKit has no C API, so `secure_enclave.swift` exports C functions that build.rs links in.
 //! The blob is CryptoKit's `dataRepresentation`: the key wrapped by this Mac's Secure Enclave.
 //! Storing the key in the keychain instead would need entitlements that an unsigned CLI does not have.
 
@@ -9,6 +9,7 @@ use p256::ecdsa::Signature;
 
 unsafe extern "C" {
     fn ms_se_generate(
+        user_presence: i32,
         out: *mut u8,
         out_cap: usize,
         out_len: *mut usize,
@@ -20,6 +21,14 @@ unsafe extern "C" {
         blob: *const u8,
         blob_len: usize,
         out: *mut u8,
+        err: *mut u8,
+        err_cap: usize,
+        err_len: *mut usize,
+    ) -> i32;
+    fn ms_se_needs_user_presence(
+        blob: *const u8,
+        blob_len: usize,
+        out: *mut i32,
         err: *mut u8,
         err_cap: usize,
         err_len: *mut usize,
@@ -46,12 +55,21 @@ fn call(f: impl FnOnce(*mut u8, usize, *mut usize) -> i32) -> Result<()> {
     }
 }
 
-pub fn generate() -> Result<Vec<u8>> {
+/// With `touch_id`, each signature needs Touch ID or the login password. This cannot change later.
+pub fn generate(touch_id: bool) -> Result<Vec<u8>> {
     let mut blob = vec![0u8; 4096];
     let mut len = 0;
     // SAFETY: every pointer is valid for the capacity passed beside it.
     call(|err, cap, err_len| unsafe {
-        ms_se_generate(blob.as_mut_ptr(), blob.len(), &mut len, err, cap, err_len)
+        ms_se_generate(
+            touch_id.into(),
+            blob.as_mut_ptr(),
+            blob.len(),
+            &mut len,
+            err,
+            cap,
+            err_len,
+        )
     })?;
     blob.truncate(len);
     Ok(blob)
@@ -71,6 +89,16 @@ pub fn public_key(blob: &[u8]) -> Result<Vec<u8>> {
         )
     })?;
     Ok(sec1)
+}
+
+/// Whether each signature needs Touch ID or the password. Asks the Secure Enclave without a prompt.
+pub fn needs_touch_id(blob: &[u8]) -> Result<bool> {
+    let mut needs = 0;
+    // SAFETY: `blob` is valid for its length and `needs` is a valid i32.
+    call(|err, cap, err_len| unsafe {
+        ms_se_needs_user_presence(blob.as_ptr(), blob.len(), &mut needs, err, cap, err_len)
+    })?;
+    Ok(needs != 0)
 }
 
 /// CryptoKit hashes `data` with SHA-256 before signing, as ECDSA-SHA256 requires.

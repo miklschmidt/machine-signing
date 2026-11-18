@@ -79,6 +79,21 @@ You can run `init` again at any time. It does not replace the key.
 
 On GitHub, `init` names the machine key `<host> TPM` on Linux, or `<host> Secure Enclave` on macOS.
 
+## Ask for Touch ID on macOS
+
+On macOS, you can make a key that needs Touch ID or your login password for each signature:
+
+```sh
+machine-signing init --touch-id
+```
+
+You must choose this when `init` creates the key, because the Secure Enclave cannot change it later.
+If a key without this requirement exists, `init --touch-id` stops and tells you how to replace the key.
+When you run `init` again, it keeps the key and tells you whether the key needs Touch ID.
+
+Each signature runs a new process, so a rebase that signs ten commits asks ten times.
+A session that cannot show the prompt cannot sign with this key, for example an SSH session.
+
 ## Prefer a YubiKey or another agent key
 
 You can tell machine-signing to sign with a key in your SSH agent, such as a YubiKey PIV key.

@@ -31,7 +31,8 @@ use tss_esapi::{
 
 const DEFAULT_DEVICE: &str = "/dev/tpmrm0";
 
-pub fn generate() -> Result<Vec<u8>> {
+pub fn generate(touch_id: bool) -> Result<Vec<u8>> {
+    anyhow::ensure!(!touch_id, "a TPM key cannot ask for Touch ID");
     let mut ctx = connect()?;
     let created = ctx.execute_with_nullauth_session(|ctx| {
         let primary = ctx.create_primary(
@@ -54,6 +55,11 @@ pub fn generate() -> Result<Vec<u8>> {
         created
     })?;
     encode_blob(&created.out_public, &created.out_private)
+}
+
+/// A TPM key never asks for Touch ID.
+pub fn needs_touch_id(_blob: &[u8]) -> Result<bool> {
+    Ok(false)
 }
 
 pub fn public_key(blob: &[u8]) -> Result<Vec<u8>> {
