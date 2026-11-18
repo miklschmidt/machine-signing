@@ -53,13 +53,16 @@ public func ms_se_generate(
     _ err: UnsafeMutablePointer<UInt8>, _ errCap: Int, _ errLen: UnsafeMutablePointer<Int>
 ) -> Int32 {
     guard SecureEnclave.isAvailable else { return fail("this Mac has no Secure Enclave", err, errCap, errLen) }
-    var flags: SecAccessControlCreateFlags = [.privateKeyUsage]
-    if userPresence != 0 { flags.insert(.userPresence) }
-    guard let access = SecAccessControlCreateWithFlags(
-        nil, kSecAttrAccessibleWhenUnlockedThisDeviceOnly, flags, nil)
-    else { return fail("cannot create the access control of the Secure Enclave key", err, errCap, errLen) }
     do {
-        let key = try SecureEnclave.P256.Signing.PrivateKey(accessControl: access)
+        let key: SecureEnclave.P256.Signing.PrivateKey
+        if userPresence == 0 {
+            key = try SecureEnclave.P256.Signing.PrivateKey()
+        } else {
+            guard let access = SecAccessControlCreateWithFlags(
+                nil, kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly, [.privateKeyUsage, .userPresence], nil)
+            else { return fail("cannot create the access control of the Secure Enclave key", err, errCap, errLen) }
+            key = try SecureEnclave.P256.Signing.PrivateKey(accessControl: access)
+        }
         guard write(key.dataRepresentation, out, outCap, outLen) else {
             return fail("the Secure Enclave key blob is larger than \(outCap) bytes", err, errCap, errLen)
         }
