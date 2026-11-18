@@ -1,0 +1,51 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  linux:
+    name: Linux tests (software TPM)
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v5
+      - run: sudo apt-get update && sudo apt-get install -y libtss2-dev swtpm
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy, rustfmt
+      - uses: Swatinem/rust-cache@v2
+      - run: cargo fmt --check
+      - run: cargo clippy --all-targets --locked -- -D warnings
+      - run: cargo test --locked
+
+  macos:
+    name: macOS build (Apple silicon)
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy
+      - uses: Swatinem/rust-cache@v2
+      - run: cargo clippy --all-targets --locked -- -D warnings
+      - run: cargo build --locked
+      # The runner is a virtual machine without a Secure Enclave. A message that names the
+      # Secure Enclave proves that the binary loads the Swift runtime and calls CryptoKit.
+      - name: Smoke test the Secure Enclave shim
+        run: |
+          output=$(env -i PATH="$PATH" HOME="$(mktemp -d)" ./target/debug/machine-signing init 2>&1) || true
+          echo "$output"
+          grep -q "Secure Enclave" <<<"$output"
+
+  nix:
+    name: Nix package
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v5
+      - uses: cachix/install-nix-action@v31
+      - run: nix build .#default -L

@@ -11,12 +11,33 @@ GitHub and GitLab accept this key type for signing.
 
 ## Install
 
-On Linux, you need the tpm2-tss libraries and access to `/dev/tpmrm0`.
-On macOS, you need the Xcode Command Line Tools, because the build compiles a small Swift file.
+Each [release](https://github.com/miklschmidt/machine-signing/releases) has a binary for these platforms:
+
+| Platform | Archive |
+| --- | --- |
+| Linux x86_64 | `machine-signing-<version>-x86_64-unknown-linux-gnu.tar.gz` |
+| Linux arm64 | `machine-signing-<version>-aarch64-unknown-linux-gnu.tar.gz` |
+| macOS on Apple silicon | `machine-signing-<version>-aarch64-apple-darwin.tar.gz` |
+
+Put `machine-signing` from the archive in a directory on your PATH.
+The Linux binaries need the tpm2-tss libraries. On Debian and Ubuntu, `sudo apt install libtss2-dev` installs all of them.
+GitHub Actions builds the Linux binaries on Ubuntu 24.04, so they need glibc 2.39 or later.
+
+The macOS binary is not signed with an Apple Developer ID.
+If you download it with a browser, macOS blocks it.
+To allow it, run `xattr -d com.apple.quarantine machine-signing`.
+
+On NixOS or with Nix on Linux, install the flake package:
 
 ```sh
-cargo install --path .
+nix profile install github:miklschmidt/machine-signing
 ```
+
+To build from source, run `cargo install --path .` in a clone.
+On Linux, the build needs `pkg-config` and the tpm2-tss development files.
+On macOS, the build needs the Xcode Command Line Tools, because it compiles a small Swift file.
+
+On Linux, machine-signing needs access to `/dev/tpmrm0`.
 
 If `init` cannot open `/dev/tpmrm0` on Linux, add your user to the `tss` group and log in again:
 
