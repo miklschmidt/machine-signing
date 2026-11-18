@@ -1,0 +1,906 @@
+{
+  "id": "5YGauzZJ",
+  "name": "Git commits signed by a hardware-bound SSH key",
+  "summary": "Sign git commits with a non-exportable P-256 key in the TPM or Secure Enclave, through git's SSH signing, so that a signature proves the commit came from this machine.",
+  "schemaVersion": 1,
+  "lifecycle": "draft",
+  "createdAt": "2026-11-18T01:23:49.511Z",
+  "predecessor": null,
+  "predecessorRevision": "a5efd4901bb8e9b1e90d5adeed9e20bbf0a236bca066b034859e0983261ec014",
+  "baseline": "c638152d8488fe42310f71844f1e07bac4c61921",
+  "changes": [
+    {
+      "type": "add",
+      "subject": "QQT2Dxdu#PrQ2h8ZS",
+      "kind": "module",
+      "value": {
+        "order": 10,
+        "name": "TPM backend",
+        "kind": "module",
+        "responsibility": "Create and use an ECDSA P-256 child key under the owner storage primary.",
+        "description": "Uses tss-esapi. Recreates the deterministic ECC P-256 storage primary on each use, loads the saved public and private blobs, and signs an external digest with a null hashcheck ticket. The key is fixedTPM, fixedParent, userWithAuth and noDA, with an empty auth value. No persistent handles.",
+        "binding": {
+          "repo": "machine-signing",
+          "path": "src/key/tpm.rs"
+        },
+        "schemaVersion": 1,
+        "id": "QQT2Dxdu#PrQ2h8ZS"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "QQT2Dxdu#PrQ2h8ZS",
+      "placement": {
+        "holder": "QQT2Dxdu#BeyvwQg3"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "QQT2Dxdu#467kLw1A",
+      "kind": "relationship",
+      "value": {
+        "order": 10,
+        "kind": "call",
+        "label": "CreatePrimary, Load, Sign",
+        "emphasis": "normal",
+        "id": "QQT2Dxdu#467kLw1A",
+        "to": "QQT2Dxdu#d6Z0gUyZ"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "QQT2Dxdu#467kLw1A",
+      "placement": {
+        "holder": "QQT2Dxdu#PrQ2h8ZS"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "QQT2Dxdu#vEPUHAth",
+      "kind": "module",
+      "value": {
+        "order": 10,
+        "name": "CLI",
+        "kind": "app",
+        "responsibility": "Route `init`, `-Y sign` and every other ssh-keygen mode.",
+        "description": "One binary that git runs as gpg.ssh.program. `-Y sign` signs with the hardware key. Every other `-Y` mode execs the real ssh-keygen with the same arguments, so verification keeps working. `init` creates the key and configures git. There is no daemon or agent.",
+        "binding": {
+          "repo": "machine-signing",
+          "path": "src/main.rs"
+        },
+        "schemaVersion": 1,
+        "id": "QQT2Dxdu#vEPUHAth"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "QQT2Dxdu#vEPUHAth",
+      "placement": {
+        "holder": "QQT2Dxdu"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "QQT2Dxdu#oGt5IFyQ",
+      "kind": "relationship",
+      "value": {
+        "order": 10,
+        "kind": "call",
+        "label": "sign buffer",
+        "emphasis": "normal",
+        "id": "QQT2Dxdu#oGt5IFyQ",
+        "to": "QQT2Dxdu#xHWs9u1C"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "QQT2Dxdu#oGt5IFyQ",
+      "placement": {
+        "holder": "QQT2Dxdu#vEPUHAth"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "QQT2Dxdu#arrD3rbv",
+      "kind": "relationship",
+      "value": {
+        "order": 20,
+        "kind": "call",
+        "label": "configure git",
+        "emphasis": "normal",
+        "id": "QQT2Dxdu#arrD3rbv",
+        "to": "QQT2Dxdu#RVUq5RTc"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "QQT2Dxdu#arrD3rbv",
+      "placement": {
+        "holder": "QQT2Dxdu#vEPUHAth"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "QQT2Dxdu#hLx0urQD",
+      "kind": "relationship",
+      "value": {
+        "order": 30,
+        "kind": "call",
+        "label": "exec other -Y modes",
+        "emphasis": "normal",
+        "id": "QQT2Dxdu#hLx0urQD",
+        "to": "QQT2Dxdu#kl43IMU6"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "QQT2Dxdu#hLx0urQD",
+      "placement": {
+        "holder": "QQT2Dxdu#vEPUHAth"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "QQT2Dxdu#3yWx2Vi4",
+      "kind": "module",
+      "value": {
+        "order": 20,
+        "name": "Secure Enclave backend",
+        "kind": "module",
+        "responsibility": "Create and use a Secure Enclave P-256 signing key through CryptoKit.",
+        "description": "A Swift shim with @_cdecl functions, built by build.rs with swiftc. It stores the CryptoKit dataRepresentation blob, because keychain storage of Secure Enclave keys needs entitlements that an unsigned CLI does not have. No user presence in v1.",
+        "binding": {
+          "repo": "machine-signing",
+          "path": "src/key/secure_enclave.rs"
+        },
+        "schemaVersion": 1,
+        "id": "QQT2Dxdu#3yWx2Vi4"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "QQT2Dxdu#3yWx2Vi4",
+      "placement": {
+        "holder": "QQT2Dxdu#BeyvwQg3"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "QQT2Dxdu#avZ4oZ1W",
+      "kind": "relationship",
+      "value": {
+        "order": 10,
+        "kind": "call",
+        "label": "CryptoKit",
+        "emphasis": "normal",
+        "id": "QQT2Dxdu#avZ4oZ1W",
+        "to": "QQT2Dxdu#ofa1Ra5m"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "QQT2Dxdu#avZ4oZ1W",
+      "placement": {
+        "holder": "QQT2Dxdu#3yWx2Vi4"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "QQT2Dxdu#xHWs9u1C",
+      "kind": "module",
+      "value": {
+        "order": 20,
+        "name": "SSH signature",
+        "kind": "module",
+        "responsibility": "Build and armor SSHSIG signatures from a hardware ECDSA signature.",
+        "description": "Uses the ssh-key crate to build the SSHSIG signed data (namespace, sha512 message hash) and to armor the result. The hardware signs the SHA-256 digest of the signed data. Also parses the -f public key and refuses a key that is not the hardware key.",
+        "binding": {
+          "repo": "machine-signing",
+          "path": "src/sshsig.rs"
+        },
+        "schemaVersion": 1,
+        "id": "QQT2Dxdu#xHWs9u1C"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "QQT2Dxdu#xHWs9u1C",
+      "placement": {
+        "holder": "QQT2Dxdu"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "QQT2Dxdu#UUJnt3m1",
+      "kind": "relationship",
+      "value": {
+        "order": 10,
+        "kind": "call",
+        "label": "public key, sign digest",
+        "emphasis": "normal",
+        "id": "QQT2Dxdu#UUJnt3m1",
+        "to": "QQT2Dxdu#PrQ2h8ZS"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "QQT2Dxdu#UUJnt3m1",
+      "placement": {
+        "holder": "QQT2Dxdu#xHWs9u1C"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "QQT2Dxdu#PrWfck5P",
+      "kind": "relationship",
+      "value": {
+        "order": 11,
+        "kind": "call",
+        "label": "public key, sign digest",
+        "emphasis": "normal",
+        "id": "QQT2Dxdu#PrWfck5P",
+        "to": "QQT2Dxdu#3yWx2Vi4"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "QQT2Dxdu#PrWfck5P",
+      "placement": {
+        "holder": "QQT2Dxdu#xHWs9u1C"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "QQT2Dxdu#RVUq5RTc",
+      "kind": "module",
+      "value": {
+        "order": 30,
+        "name": "Git setup",
+        "kind": "module",
+        "responsibility": "Configure global git for SSH signing with the hardware key.",
+        "description": "Sets gpg.format=ssh, gpg.ssh.program, user.signingkey=key::<public key> and commit.gpgsign=true, and appends the key to the allowed signers file. It prints each changed value and the gh command that uploads the signing key. It does not set tag.gpgsign.",
+        "binding": {
+          "repo": "machine-signing",
+          "path": "src/git_setup.rs"
+        },
+        "schemaVersion": 1,
+        "id": "QQT2Dxdu#RVUq5RTc"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "QQT2Dxdu#RVUq5RTc",
+      "placement": {
+        "holder": "QQT2Dxdu"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "QQT2Dxdu#Ikan0nl2",
+      "kind": "relationship",
+      "value": {
+        "order": 10,
+        "kind": "call",
+        "label": "create or load key",
+        "emphasis": "normal",
+        "id": "QQT2Dxdu#Ikan0nl2",
+        "to": "QQT2Dxdu#PrQ2h8ZS"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "QQT2Dxdu#Ikan0nl2",
+      "placement": {
+        "holder": "QQT2Dxdu#RVUq5RTc"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "QQT2Dxdu#c6bj1i40",
+      "kind": "relationship",
+      "value": {
+        "order": 11,
+        "kind": "call",
+        "label": "create or load key",
+        "emphasis": "normal",
+        "id": "QQT2Dxdu#c6bj1i40",
+        "to": "QQT2Dxdu#3yWx2Vi4"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "QQT2Dxdu#c6bj1i40",
+      "placement": {
+        "holder": "QQT2Dxdu#RVUq5RTc"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "QQT2Dxdu#wc2UT8c9",
+      "kind": "relationship",
+      "value": {
+        "order": 20,
+        "kind": "call",
+        "label": "git config --global",
+        "emphasis": "normal",
+        "id": "QQT2Dxdu#wc2UT8c9",
+        "to": "QQT2Dxdu#pbzqEcu0"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "QQT2Dxdu#wc2UT8c9",
+      "placement": {
+        "holder": "QQT2Dxdu#RVUq5RTc"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "QQT2Dxdu#BeyvwQg3",
+      "kind": "module",
+      "value": {
+        "order": 40,
+        "name": "Hardware key",
+        "kind": "module",
+        "responsibility": "Create, store and use the one machine key through the platform backend.",
+        "description": "Stores the hardware-wrapped key blob in the user data directory and selects the backend at compile time: TPM on Linux, Secure Enclave on macOS. The blob is useless on another machine.",
+        "binding": {
+          "repo": "machine-signing",
+          "path": "src/key/"
+        },
+        "schemaVersion": 1,
+        "id": "QQT2Dxdu#BeyvwQg3"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "QQT2Dxdu#BeyvwQg3",
+      "placement": {
+        "holder": "QQT2Dxdu"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "QQT2Dxdu#pbzqEcu0",
+      "kind": "module",
+      "value": {
+        "order": 50,
+        "name": "git",
+        "kind": "external",
+        "responsibility": "Run gpg.ssh.program to sign and verify commits.",
+        "schemaVersion": 1,
+        "id": "QQT2Dxdu#pbzqEcu0"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "QQT2Dxdu#pbzqEcu0",
+      "placement": {
+        "holder": "QQT2Dxdu"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "QQT2Dxdu#uhOx9WlH",
+      "kind": "relationship",
+      "value": {
+        "order": 10,
+        "kind": "call",
+        "label": "gpg.ssh.program -Y …",
+        "emphasis": "normal",
+        "id": "QQT2Dxdu#uhOx9WlH",
+        "to": "QQT2Dxdu#vEPUHAth"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "QQT2Dxdu#uhOx9WlH",
+      "placement": {
+        "holder": "QQT2Dxdu#pbzqEcu0"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "QQT2Dxdu#kl43IMU6",
+      "kind": "module",
+      "value": {
+        "order": 60,
+        "name": "ssh-keygen",
+        "kind": "external",
+        "responsibility": "Verify SSH signatures against the allowed signers file.",
+        "schemaVersion": 1,
+        "id": "QQT2Dxdu#kl43IMU6"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "QQT2Dxdu#kl43IMU6",
+      "placement": {
+        "holder": "QQT2Dxdu"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "QQT2Dxdu#d6Z0gUyZ",
+      "kind": "module",
+      "value": {
+        "order": 70,
+        "name": "TPM 2.0",
+        "kind": "external",
+        "responsibility": "Hold the owner storage seed and sign digests, through /dev/tpmrm0.",
+        "schemaVersion": 1,
+        "id": "QQT2Dxdu#d6Z0gUyZ"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "QQT2Dxdu#d6Z0gUyZ",
+      "placement": {
+        "holder": "QQT2Dxdu"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "QQT2Dxdu#ofa1Ra5m",
+      "kind": "module",
+      "value": {
+        "order": 80,
+        "name": "Secure Enclave",
+        "kind": "external",
+        "responsibility": "Wrap and use P-256 keys that never leave the Apple silicon chip.",
+        "schemaVersion": 1,
+        "id": "QQT2Dxdu#ofa1Ra5m"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "QQT2Dxdu#ofa1Ra5m",
+      "placement": {
+        "holder": "QQT2Dxdu"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "QQT2Dxdu#cDVL8JiF",
+      "kind": "collection",
+      "value": {
+        "schemaVersion": 1,
+        "id": "cDVL8JiF",
+        "name": "Signing"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "QQT2Dxdu#Y78771AN",
+      "kind": "flow",
+      "value": {
+        "id": "QQT2Dxdu#Y78771AN",
+        "name": "Sign a commit",
+        "summary": "git asks the tool for an SSH signature of the commit buffer. The tool checks the requested key, has the hardware sign the SSHSIG digest, and writes the armored signature where git reads it.",
+        "participants": [
+          "QQT2Dxdu#pbzqEcu0",
+          "QQT2Dxdu#vEPUHAth",
+          "QQT2Dxdu#xHWs9u1C",
+          "QQT2Dxdu#PrQ2h8ZS",
+          "QQT2Dxdu#d6Z0gUyZ"
+        ]
+      }
+    },
+    {
+      "type": "place",
+      "subject": "QQT2Dxdu#Y78771AN",
+      "placement": {
+        "holder": "QQT2Dxdu#cDVL8JiF",
+        "before": "QQT2Dxdu#3zhlihhF"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "QQT2Dxdu#KoPqJ3bT",
+      "kind": "step",
+      "value": {
+        "id": "QQT2Dxdu#KoPqJ3bT",
+        "from": "QQT2Dxdu#pbzqEcu0",
+        "to": "QQT2Dxdu#vEPUHAth",
+        "label": "-Y sign -n git -f <key> -U <buffer>",
+        "kind": "sync"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "QQT2Dxdu#KoPqJ3bT",
+      "placement": {
+        "holder": "QQT2Dxdu#Y78771AN",
+        "before": "QQT2Dxdu#M1uFLAeI"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "QQT2Dxdu#M1uFLAeI",
+      "kind": "step",
+      "value": {
+        "id": "QQT2Dxdu#M1uFLAeI",
+        "from": "QQT2Dxdu#vEPUHAth",
+        "to": "QQT2Dxdu#xHWs9u1C",
+        "label": "sign buffer for -f key",
+        "kind": "sync"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "QQT2Dxdu#M1uFLAeI",
+      "placement": {
+        "holder": "QQT2Dxdu#Y78771AN",
+        "before": "QQT2Dxdu#4XuR93uN"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "QQT2Dxdu#4XuR93uN",
+      "kind": "step",
+      "value": {
+        "id": "QQT2Dxdu#4XuR93uN",
+        "from": "QQT2Dxdu#xHWs9u1C",
+        "to": "QQT2Dxdu#PrQ2h8ZS",
+        "label": "load key blob, sign SHA-256 digest",
+        "kind": "sync"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "QQT2Dxdu#4XuR93uN",
+      "placement": {
+        "holder": "QQT2Dxdu#Y78771AN",
+        "before": "QQT2Dxdu#NXE6a52E"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "QQT2Dxdu#NXE6a52E",
+      "kind": "step",
+      "value": {
+        "id": "QQT2Dxdu#NXE6a52E",
+        "from": "QQT2Dxdu#PrQ2h8ZS",
+        "to": "QQT2Dxdu#d6Z0gUyZ",
+        "label": "CreatePrimary, Load, Sign",
+        "kind": "sync"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "QQT2Dxdu#NXE6a52E",
+      "placement": {
+        "holder": "QQT2Dxdu#Y78771AN",
+        "before": "QQT2Dxdu#nF8fhaHC"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "QQT2Dxdu#nF8fhaHC",
+      "kind": "step",
+      "value": {
+        "id": "QQT2Dxdu#nF8fhaHC",
+        "from": "QQT2Dxdu#d6Z0gUyZ",
+        "to": "QQT2Dxdu#PrQ2h8ZS",
+        "label": "ECDSA r, s",
+        "kind": "return"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "QQT2Dxdu#nF8fhaHC",
+      "placement": {
+        "holder": "QQT2Dxdu#Y78771AN",
+        "before": "QQT2Dxdu#G7UZul2j"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "QQT2Dxdu#G7UZul2j",
+      "kind": "step",
+      "value": {
+        "id": "QQT2Dxdu#G7UZul2j",
+        "from": "QQT2Dxdu#PrQ2h8ZS",
+        "to": "QQT2Dxdu#xHWs9u1C",
+        "label": "signature",
+        "kind": "return"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "QQT2Dxdu#G7UZul2j",
+      "placement": {
+        "holder": "QQT2Dxdu#Y78771AN",
+        "before": "QQT2Dxdu#ZTOLTHek"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "QQT2Dxdu#ZTOLTHek",
+      "kind": "step",
+      "value": {
+        "id": "QQT2Dxdu#ZTOLTHek",
+        "from": "QQT2Dxdu#xHWs9u1C",
+        "to": "QQT2Dxdu#vEPUHAth",
+        "label": "armored SSHSIG",
+        "kind": "return"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "QQT2Dxdu#ZTOLTHek",
+      "placement": {
+        "holder": "QQT2Dxdu#Y78771AN",
+        "before": "QQT2Dxdu#uYBj5NbC"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "QQT2Dxdu#uYBj5NbC",
+      "kind": "step",
+      "value": {
+        "id": "QQT2Dxdu#uYBj5NbC",
+        "from": "QQT2Dxdu#vEPUHAth",
+        "to": "QQT2Dxdu#pbzqEcu0",
+        "label": "<buffer>.sig",
+        "kind": "return"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "QQT2Dxdu#uYBj5NbC",
+      "placement": {
+        "holder": "QQT2Dxdu#Y78771AN"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "QQT2Dxdu#3zhlihhF",
+      "kind": "flow",
+      "value": {
+        "id": "QQT2Dxdu#3zhlihhF",
+        "name": "Verify a signature",
+        "summary": "git verifies signatures through the same gpg.ssh.program. The tool hands every mode other than sign to the real ssh-keygen unchanged, so verification needs no code of its own.",
+        "participants": [
+          "QQT2Dxdu#pbzqEcu0",
+          "QQT2Dxdu#vEPUHAth",
+          "QQT2Dxdu#kl43IMU6"
+        ]
+      }
+    },
+    {
+      "type": "place",
+      "subject": "QQT2Dxdu#3zhlihhF",
+      "placement": {
+        "holder": "QQT2Dxdu#cDVL8JiF",
+        "before": "QQT2Dxdu#XbTgQ58S"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "QQT2Dxdu#ldWz0vJk",
+      "kind": "step",
+      "value": {
+        "id": "QQT2Dxdu#ldWz0vJk",
+        "from": "QQT2Dxdu#pbzqEcu0",
+        "to": "QQT2Dxdu#vEPUHAth",
+        "label": "-Y verify | find-principals | check-novalidate",
+        "kind": "sync"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "QQT2Dxdu#ldWz0vJk",
+      "placement": {
+        "holder": "QQT2Dxdu#3zhlihhF",
+        "before": "QQT2Dxdu#T3xpeLg0"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "QQT2Dxdu#T3xpeLg0",
+      "kind": "step",
+      "value": {
+        "id": "QQT2Dxdu#T3xpeLg0",
+        "from": "QQT2Dxdu#vEPUHAth",
+        "to": "QQT2Dxdu#kl43IMU6",
+        "label": "exec with the same arguments",
+        "kind": "sync"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "QQT2Dxdu#T3xpeLg0",
+      "placement": {
+        "holder": "QQT2Dxdu#3zhlihhF",
+        "before": "QQT2Dxdu#76iamkYT"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "QQT2Dxdu#76iamkYT",
+      "kind": "step",
+      "value": {
+        "id": "QQT2Dxdu#76iamkYT",
+        "from": "QQT2Dxdu#kl43IMU6",
+        "to": "QQT2Dxdu#pbzqEcu0",
+        "label": "exit status, principal",
+        "kind": "return"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "QQT2Dxdu#76iamkYT",
+      "placement": {
+        "holder": "QQT2Dxdu#3zhlihhF"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "QQT2Dxdu#XbTgQ58S",
+      "kind": "flow",
+      "value": {
+        "id": "QQT2Dxdu#XbTgQ58S",
+        "name": "Initialize",
+        "summary": "The user runs init once per machine. It creates the hardware key if none exists, configures global git to sign with it, and prints the public key and the gh command that uploads it.",
+        "participants": [
+          "QQT2Dxdu#vEPUHAth",
+          "QQT2Dxdu#RVUq5RTc",
+          "QQT2Dxdu#PrQ2h8ZS",
+          "QQT2Dxdu#d6Z0gUyZ",
+          "QQT2Dxdu#pbzqEcu0"
+        ]
+      }
+    },
+    {
+      "type": "place",
+      "subject": "QQT2Dxdu#XbTgQ58S",
+      "placement": {
+        "holder": "QQT2Dxdu#cDVL8JiF"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "QQT2Dxdu#4VHTHztx",
+      "kind": "step",
+      "value": {
+        "id": "QQT2Dxdu#4VHTHztx",
+        "from": "QQT2Dxdu#vEPUHAth",
+        "to": "QQT2Dxdu#RVUq5RTc",
+        "label": "init",
+        "kind": "sync"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "QQT2Dxdu#4VHTHztx",
+      "placement": {
+        "holder": "QQT2Dxdu#XbTgQ58S",
+        "before": "QQT2Dxdu#Sw5Ev33A"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "QQT2Dxdu#Sw5Ev33A",
+      "kind": "step",
+      "value": {
+        "id": "QQT2Dxdu#Sw5Ev33A",
+        "kind": "decision",
+        "question": "Key blob exists?",
+        "alternatives": [
+          "no",
+          "yes"
+        ]
+      }
+    },
+    {
+      "type": "place",
+      "subject": "QQT2Dxdu#Sw5Ev33A",
+      "placement": {
+        "holder": "QQT2Dxdu#XbTgQ58S",
+        "before": "QQT2Dxdu#FsdLrfUO"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "QQT2Dxdu#jddfRiDo",
+      "kind": "step",
+      "value": {
+        "id": "QQT2Dxdu#jddfRiDo",
+        "from": "QQT2Dxdu#RVUq5RTc",
+        "to": "QQT2Dxdu#PrQ2h8ZS",
+        "label": "generate",
+        "kind": "sync"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "QQT2Dxdu#jddfRiDo",
+      "placement": {
+        "holder": "QQT2Dxdu#Sw5Ev33A",
+        "alternative": "no",
+        "before": "QQT2Dxdu#gyJptPoD"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "QQT2Dxdu#gyJptPoD",
+      "kind": "step",
+      "value": {
+        "id": "QQT2Dxdu#gyJptPoD",
+        "from": "QQT2Dxdu#PrQ2h8ZS",
+        "to": "QQT2Dxdu#d6Z0gUyZ",
+        "label": "CreatePrimary, Create",
+        "kind": "sync"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "QQT2Dxdu#gyJptPoD",
+      "placement": {
+        "holder": "QQT2Dxdu#Sw5Ev33A",
+        "alternative": "no",
+        "before": "QQT2Dxdu#zAK3FM9q"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "QQT2Dxdu#zAK3FM9q",
+      "kind": "step",
+      "value": {
+        "id": "QQT2Dxdu#zAK3FM9q",
+        "from": "QQT2Dxdu#PrQ2h8ZS",
+        "to": "QQT2Dxdu#RVUq5RTc",
+        "label": "public key, saved blob",
+        "kind": "return"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "QQT2Dxdu#zAK3FM9q",
+      "placement": {
+        "holder": "QQT2Dxdu#Sw5Ev33A",
+        "alternative": "no"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "QQT2Dxdu#D0pZgaak",
+      "kind": "step",
+      "value": {
+        "id": "QQT2Dxdu#D0pZgaak",
+        "from": "QQT2Dxdu#RVUq5RTc",
+        "to": "QQT2Dxdu#PrQ2h8ZS",
+        "label": "read public key",
+        "kind": "sync"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "QQT2Dxdu#D0pZgaak",
+      "placement": {
+        "holder": "QQT2Dxdu#Sw5Ev33A",
+        "alternative": "yes"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "QQT2Dxdu#FsdLrfUO",
+      "kind": "step",
+      "value": {
+        "id": "QQT2Dxdu#FsdLrfUO",
+        "from": "QQT2Dxdu#RVUq5RTc",
+        "to": "QQT2Dxdu#pbzqEcu0",
+        "label": "git config --global …",
+        "kind": "sync"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "QQT2Dxdu#FsdLrfUO",
+      "placement": {
+        "holder": "QQT2Dxdu#XbTgQ58S"
+      }
+    }
+  ]
+}
