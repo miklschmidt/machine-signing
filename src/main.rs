@@ -5,18 +5,21 @@
 
 mod git_setup;
 mod key;
+mod prefer;
 mod sshsig;
 
 use std::ffi::OsString;
-use std::os::unix::process::CommandExt;
-use std::process::{Command, ExitCode};
+use std::process::ExitCode;
 
 const USAGE: &str = "\
 Usage:
-  machine-signing init
+  machine-signing init [--prefer <public key file> | --no-prefer]
       Create the machine key if it does not exist, and configure global git to sign commits with it.
+      --prefer signs with that SSH agent key, such as a YubiKey key, whenever the agent can.
+      Otherwise the machine key signs. --no-prefer removes the preference.
   machine-signing -Y <mode> ...
-      ssh-keygen compatible. git calls this. -Y sign uses the machine key; other modes run ssh-keygen.";
+      ssh-keygen compatible. git calls this. -Y sign for the machine key uses the preferred key
+      or the machine key. Every other request runs ssh-keygen.";
 
 fn main() -> ExitCode {
     let args: Vec<OsString> = std::env::args_os().skip(1).collect();
@@ -25,12 +28,9 @@ fn main() -> ExitCode {
         .position(|arg| arg == "-Y")
         .and_then(|i| args.get(i + 1));
     let result = match (args.first().and_then(|arg| arg.to_str()), mode) {
-        (Some("init"), None) if args.len() == 1 => git_setup::init(),
+        (Some("init"), None) => git_setup::init(&args[1..]),
         (_, Some(mode)) if mode == "sign" => sshsig::run(&args),
-        (_, Some(_)) => {
-            let err = Command::new("ssh-keygen").args(&args).exec();
-            Err(anyhow::Error::new(err).context("cannot run ssh-keygen"))
-        }
+        (_, Some(_)) => sshsig::exec_ssh_keygen(&args),
         _ => {
             eprintln!("{USAGE}");
             return ExitCode::from(2);

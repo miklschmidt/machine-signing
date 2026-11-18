@@ -53,10 +53,46 @@ For example, git cannot write a `~/.config/git/config` that home-manager manages
 
 You can run `init` again at any time. It does not replace the key.
 
+On GitHub, `init` names the machine key `<host> TPM` on Linux, or `<host> Secure Enclave` on macOS.
+
+## Prefer a YubiKey or another agent key
+
+You can tell machine-signing to sign with a key in your SSH agent, such as a YubiKey PIV key.
+When the agent cannot sign with that key, the machine key signs instead.
+For example, the agent cannot sign with a YubiKey that is not connected.
+
+1. Write the public key of the agent key to a file, for example with `ssh-add -L > yubikey.pub`. Keep only the line of that key.
+2. Run `init` with that file:
+
+   ```sh
+   machine-signing init --prefer yubikey.pub
+   ```
+
+`init` copies the key to `prefer.pub` beside the machine key and signs a test message through the agent.
+It reports whether the agent can sign with the key now.
+It also adds the key to GitHub and to the allowed signers file, the same as the machine key.
+On GitHub, the key is named `<key comment> via <host> agent`.
+To use another name, add `--title <name>` to the `init --prefer` command.
+
+When the machine key signs instead of the preferred key, machine-signing writes one line to your terminal with the cause.
+
+If the YubiKey was unplugged after you loaded it with `ssh-add -s`, the agent refuses to sign with it.
+To load it again, run these commands with the PKCS#11 library of your agent:
+
+```sh
+ssh-add -e /path/to/opensc-pkcs11.so
+ssh-add -s /path/to/opensc-pkcs11.so
+```
+
+To sign with the machine key only, run `machine-signing init --no-prefer`.
+
+If git asks for a key that is not the machine key, machine-signing passes the request to `ssh-keygen` unchanged.
+For example, a repository can set its own `user.signingkey`.
+
 ## How it works
 
 git runs `machine-signing` as its SSH signing program (`gpg.ssh.program`).
-For `-Y sign`, machine-signing makes sure that the requested key is the machine key, and the hardware signs the commit.
+For `-Y sign` with the machine key, the preferred key signs through the agent, or else the hardware signs the commit.
 machine-signing passes every other `-Y` mode to `ssh-keygen` unchanged, so verification works as before.
 No agent or background process runs.
 

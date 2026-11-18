@@ -1,14 +1,50 @@
 //! `machine-signing init`: create the key if needed and configure global git to sign with it.
 
 use crate::key::{HARDWARE, Key, Loaded};
+use crate::prefer;
 use anyhow::{Context, Result, bail};
-use std::ffi::OsStr;
+use std::ffi::{OsStr, OsString};
 use std::path::{Path, PathBuf};
 use std::process::Command;
 
 const DEFAULT_ALLOWED_SIGNERS: &str = "~/.config/git/allowed_signers";
 
-pub fn init() -> Result<()> {
+const USAGE: &str = "usage: machine-signing init [--prefer <public key file> [--title <GitHub title>] | --no-prefer]";
+
+enum Preference {
+    Keep,
+    Set {
+        file: PathBuf,
+        title: Option<String>,
+    },
+    Clear,
+}
+
+fn parse(args: &[OsString]) -> Result<Preference> {
+    let (mut file, mut title, mut clear) = (None, None, false);
+    let mut args = args.iter();
+    while let Some(arg) = args.next() {
+        let mut value = |flag: &str| args.next().with_context(|| format!("{flag} needs a value"));
+        match arg.to_str() {
+            Some("--prefer") => file = Some(PathBuf::from(value("--prefer")?)),
+            Some("--title") => title = Some(value("--title")?.to_string_lossy().into_owned()),
+            Some("--no-prefer") => clear = true,
+            _ => bail!("{USAGE}"),
+        }
+    }
+    Ok(match (file, title, clear) {
+        (None, None, false) => Preference::Keep,
+        (Some(file), title, false) => Preference::Set { file, title },
+        (None, None, true) => Preference::Clear,
+        (None, Some(_), false) => {
+            bail!("--title names the preferred key on GitHub, so it needs --prefer")
+        }
+        _ => bail!("{USAGE}"),
+    })
+}
+
+pub fn init(args: &[OsString]) -> Result<()> {
+    let preference = parse(args)?;
     let key = match Key::load_or_create()? {
         Loaded::Created(key) => {
             eprintln!("Created a new {HARDWARE} key: {}", Key::path()?.display());
@@ -32,9 +68,44 @@ pub fn init() -> Result<()> {
     eprintln!("Public key:");
     println!("{public_line}");
     eprintln!();
-    add_to_github(&public, &public_path, &format!("machine-signing@{host}"));
-
+    add_to_github(&public, &public_path, &format!("{host} {HARDWARE}"));
     let allowed_signers = add_allowed_signer(&public)?;
+
+    let mut title = None;
+    let preferred = match preference {
+        Preference::Keep => prefer::load()?,
+        Preference::Set {
+            file,
+            title: chosen,
+        } => {
+            title = chosen;
+            Some(prefer::set(&file, &key)?)
+        }
+        Preference::Clear => {
+            if prefer::clear()? {
+                eprintln!("\nRemoved the preferred key. The machine key signs all commits.");
+            }
+            None
+        }
+    };
+    if let Some(preferred) = preferred {
+        let name = prefer::name(&preferred);
+        eprintln!("\nPreferred key: {}", preferred.to_openssh()?);
+        match prefer::sign(&preferred, "git", b"machine-signing init test") {
+            Ok(_) => eprintln!("The SSH agent signs with {name}, so it signs your commits."),
+            Err(err) => eprintln!(
+                "The SSH agent cannot sign with {name} now, so the machine key signs instead: {err:#}"
+            ),
+        }
+        add_to_github(
+            &preferred,
+            &prefer::path()?,
+            &title.unwrap_or_else(|| format!("{name} via {host} agent")),
+        );
+        add_allowed_signer(&preferred)?;
+    }
+    eprintln!();
+
     let mut settings = vec![
         ("gpg.format", "ssh".to_owned()),
         ("gpg.ssh.program", program()?),
